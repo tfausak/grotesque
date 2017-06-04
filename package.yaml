@@ -8,7 +8,10 @@ license: MIT
 maintainer: Taylor Fausak
 synopsis: An implementation of GraphQL.
 
-dependencies: base
+dependencies:
+  - base
+  - megaparsec
+  - scientific
 ghc-options: -Wall
 
 library:
@@ -19,6 +22,7 @@ tests:
     dependencies:
       - grotesque
       - hspec
+      - hspec-megaparsec
     ghc-options:
       - -rtsopts
       - -threaded
