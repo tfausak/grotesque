@@ -1,11 +1,13 @@
 module Grotesque.Parser where
 
 import Data.Scientific (Scientific)
+import Data.Text (Text)
 import Grotesque.Language
 import Text.Megaparsec
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec.Text (Parser)
 import Text.Read (readMaybe)
 
+import qualified Data.Text as Text
 import qualified Text.Megaparsec.Lexer as Lexer
 
 
@@ -231,7 +233,7 @@ getName = getLexeme (do
   first <- oneOf (concat [underscore, uppers, lowers])
   rest <- many (oneOf (concat [underscore, digits, uppers, lowers]))
   pure Name
-    { nameValue = first : rest
+    { nameValue = Text.pack (first : rest)
     })
 
 
@@ -384,12 +386,12 @@ getFractionalExponentFloat = do
     Just float -> pure float
 
 
-getString :: Parser String
+getString :: Parser Text
 getString = getLexeme (do
   _ <- getQuote
   characters <- many getCharacter
   _ <- getQuote
-  pure characters)
+  pure (Text.pack characters))
 
 
 getQuote :: Parser Char
@@ -503,7 +505,7 @@ getEllipsis = getSymbol "..."
 getFragmentName :: Parser FragmentName
 getFragmentName = do
   value <- getName
-  case nameValue value of
+  case Text.unpack (nameValue value) of
     "on" -> fail "invalid fragment name"
     _ -> pure FragmentName
       { fragmentNameValue = value

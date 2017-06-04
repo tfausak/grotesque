@@ -12,6 +12,7 @@ dependencies:
   - base
   - megaparsec
   - scientific
+  - text
 ghc-options: -Wall
 
 library:

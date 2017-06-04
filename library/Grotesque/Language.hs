@@ -1,6 +1,7 @@
 module Grotesque.Language where
 
 import Data.Scientific (Scientific)
+import Data.Text (Text)
 
 
 -- | <https://facebook.github.io/graphql/#Document>
@@ -36,7 +37,7 @@ data OperationType
 
 -- | <https://facebook.github.io/graphql/#Name>
 newtype Name = Name
-  { nameValue :: String
+  { nameValue :: Text
   } deriving (Eq, Show)
 
 
@@ -98,7 +99,7 @@ data Value
   = ValueVariable Variable
   | ValueInt Integer
   | ValueFloat Scientific
-  | ValueString String
+  | ValueString Text
   | ValueBoolean Bool
   | ValueNull
   | ValueEnum Name

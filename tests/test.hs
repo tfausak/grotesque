@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+import Data.Text
 import Grotesque
 import Test.Hspec
 import Test.Hspec.Megaparsec
@@ -1032,6 +1035,6 @@ main = hspec . parallel $ do
         ]
       }
 
-test :: String -> String -> Document -> Spec
+test :: String -> Text -> Document -> Spec
 test description input document =
   it description (shouldParse (parse getDocument "" input) document)
