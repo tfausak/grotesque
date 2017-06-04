@@ -11,6 +11,7 @@ synopsis: An implementation of GraphQL.
 dependencies:
   - base
   - megaparsec
+  - prettyprinter
   - scientific
   - text
 ghc-options: -Wall
