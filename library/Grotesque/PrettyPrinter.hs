@@ -1,74 +1,88 @@
 module Grotesque.PrettyPrinter where
 
+import Data.Scientific (Scientific)
+import Data.Text (Text)
 import Data.Text.Lazy.Builder.Scientific (scientificBuilder)
-import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc hiding (prettyList)
 import Grotesque.Language
 import Text.Printf (printf)
 
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy.Builder as Builder
 
+
 prettyDocument :: Document -> Doc ()
-prettyDocument document = vsep (map prettyDefinition (documentValue document))
+prettyDocument x = vsep (map prettyDefinition (documentValue x))
+
 
 prettyDefinition :: Definition -> Doc ()
-prettyDefinition definition = case definition of
-  DefinitionOperation operationDefinition -> prettyOperationDefinition operationDefinition
-  DefinitionFragment fragmentDefinition -> prettyFragmentDefinition fragmentDefinition
+prettyDefinition x = case x of
+  DefinitionOperation y -> prettyOperationDefinition y
+  DefinitionFragment y -> prettyFragmentDefinition y
+
 
 prettyOperationDefinition :: OperationDefinition -> Doc ()
-prettyOperationDefinition operationDefinition = sep
-  [ prettyOperationType (operationDefinitionOperationType operationDefinition)
-  , pretty (fmap prettyName (operationDefinitionName operationDefinition))
-  , pretty (fmap prettyVariableDefinitions (operationDefinitionVariableDefinitions operationDefinition))
-  , pretty (fmap prettyDirectives (operationDefinitionDirectives operationDefinition))
-  , prettySelectionSet (operationDefinitionSelectionSet operationDefinition)
+prettyOperationDefinition x = sep
+  [ prettyOperationType (operationDefinitionOperationType x)
+  , pretty (fmap prettyName (operationDefinitionName x))
+  , pretty (fmap prettyVariableDefinitions (operationDefinitionVariableDefinitions x))
+  , pretty (fmap prettyDirectives (operationDefinitionDirectives x))
+  , prettySelectionSet (operationDefinitionSelectionSet x)
   ]
+
 
 prettyName :: Name -> Doc ()
-prettyName name = pretty (nameValue name)
+prettyName x = pretty (nameValue x)
+
 
 prettyVariableDefinitions :: VariableDefinitions -> Doc ()
-prettyVariableDefinitions variableDefinitions = parens (sep (map prettyVariableDefinition (variableDefinitionsValue variableDefinitions)))
+prettyVariableDefinitions x =
+  parens (sep (map prettyVariableDefinition (variableDefinitionsValue x)))
+
 
 prettyVariableDefinition :: VariableDefinition -> Doc ()
-prettyVariableDefinition variableDefinition = sep
-  [ hcat [prettyVariable (variableDefinitionVariable variableDefinition), pretty ":"]
-  , prettyType (variableDefinitionType variableDefinition)
-  , pretty (fmap prettyDefaultValue (variableDefinitionDefaultValue variableDefinition))
+prettyVariableDefinition x = sep
+  [ hcat [prettyVariable (variableDefinitionVariable x), pretty ":"]
+  , prettyType (variableDefinitionType x)
+  , pretty (fmap prettyDefaultValue (variableDefinitionDefaultValue x))
   ]
+
 
 prettyType :: Type -> Doc ()
-prettyType type_ = case type_ of
-  TypeNamed namedType -> prettyNamedType namedType
-  TypeList listType -> prettyListType listType
-  TypeNonNull nonNullType -> prettyNonNullType nonNullType
+prettyType x = case x of
+  TypeNamed y -> prettyNamedType y
+  TypeList y -> prettyListType y
+  TypeNonNull y -> prettyNonNullType y
+
 
 prettyNamedType :: NamedType -> Doc ()
-prettyNamedType namedType = prettyName (namedTypeValue namedType)
+prettyNamedType x = prettyName (namedTypeValue x)
+
 
 prettyListType :: ListType -> Doc ()
-prettyListType listType = brackets (prettyType (listTypeValue listType))
+prettyListType x = brackets (prettyType (listTypeValue x))
+
 
 prettyNonNullType :: NonNullType -> Doc ()
-prettyNonNullType nonNullType = case nonNullType of
-  NonNullTypeNamed namedType -> hcat [prettyNamedType namedType, pretty "!"]
-  NonNullTypeList listType -> hcat [prettyListType listType, pretty "!"]
+prettyNonNullType x = case x of
+  NonNullTypeNamed y -> hcat [prettyNamedType y, pretty "!"]
+  NonNullTypeList y -> hcat [prettyListType y, pretty "!"]
+
 
 prettyDefaultValue :: DefaultValue -> Doc ()
-prettyDefaultValue defaultValue = sep
-  [ pretty "="
-  , prettyValue (defaultValueValue defaultValue)
-  ]
+prettyDefaultValue x = sep [pretty "=", prettyValue (defaultValueValue x)]
+
 
 prettyDirectives :: Directives -> Doc ()
-prettyDirectives directives = sep (map prettyDirective (directivesValue directives))
+prettyDirectives x = sep (map prettyDirective (directivesValue x))
+
 
 prettyDirective :: Directive -> Doc ()
-prettyDirective directive = sep
-  [ hcat [pretty "@", prettyName (directiveName directive)]
-  , pretty (fmap prettyArguments (directiveArguments directive))
+prettyDirective x = sep
+  [ hcat [pretty "@", prettyName (directiveName x)]
+  , pretty (fmap prettyArguments (directiveArguments x))
   ]
+
 
 prettyOperationType :: OperationType -> Doc ()
 prettyOperationType operationType = case operationType of
@@ -76,76 +90,120 @@ prettyOperationType operationType = case operationType of
   OperationTypeMutation -> pretty "mutation"
   OperationTypeSubscription -> pretty "subscription"
 
+
 prettySelectionSet :: SelectionSet -> Doc ()
-prettySelectionSet selectionSet = braces (sep (map prettySelection (selectionSetValue selectionSet)))
+prettySelectionSet x = braces (sep (map prettySelection (selectionSetValue x)))
+
 
 prettySelection :: Selection -> Doc ()
-prettySelection selection = case selection of
-  SelectionField field -> prettyField field
-  SelectionFragmentSpread fragmentSpread -> prettyFragmentSpread fragmentSpread
-  SelectionInlineFragment inlineFragment -> prettyInlineFragment inlineFragment
+prettySelection x = case x of
+  SelectionField y -> prettyField y
+  SelectionFragmentSpread y -> prettyFragmentSpread y
+  SelectionInlineFragment y -> prettyInlineFragment y
+
 
 prettyField :: Field -> Doc ()
-prettyField field = sep
-  [ pretty (fmap prettyAlias (fieldAlias field))
-  , prettyName (fieldName field)
-  , pretty (fmap prettyArguments (fieldArguments field))
-  , pretty (fmap prettyDirectives (fieldDirectives field))
-  , pretty (fmap prettySelectionSet (fieldSelectionSet field))
+prettyField x = sep
+  [ pretty (fmap prettyAlias (fieldAlias x))
+  , prettyName (fieldName x)
+  , pretty (fmap prettyArguments (fieldArguments x))
+  , pretty (fmap prettyDirectives (fieldDirectives x))
+  , pretty (fmap prettySelectionSet (fieldSelectionSet x))
   ]
+
 
 prettyAlias :: Alias -> Doc ()
-prettyAlias alias = hcat [prettyName (aliasValue alias), pretty ":"]
+prettyAlias x = hcat [prettyName (aliasValue x), pretty ":"]
+
 
 prettyArguments :: Arguments -> Doc ()
-prettyArguments arguments = parens (sep (map prettyArgument (argumentsValue arguments)))
+prettyArguments x = parens (sep (map prettyArgument (argumentsValue x)))
+
 
 prettyArgument :: Argument -> Doc ()
-prettyArgument argument = sep
-  [ hcat [prettyName (argumentName argument), pretty ":"]
-  , prettyValue (argumentValue argument)
+prettyArgument x = sep
+  [ hcat [prettyName (argumentName x), pretty ":"]
+  , prettyValue (argumentValue x)
   ]
+
 
 prettyValue :: Value -> Doc ()
-prettyValue value = case value of
-  ValueVariable x -> prettyVariable x
-  ValueInt x -> pretty x
-  ValueFloat x -> pretty (Builder.toLazyText (scientificBuilder x))
-  ValueString x -> dquotes (pretty (Builder.toLazyText (Text.foldl'
-    (\b c -> case c of
-      '"' -> b <> Builder.fromString "\\\""
-      '\\' -> b <> Builder.fromString "\\\\"
-      _ -> if c < ' ' || c > '~'
-        then b <> Builder.fromString ('\\' : 'u' : printf "%04x" (fromEnum c))
-        else b <> Builder.fromString [c])
-    mempty
-    x)))
-  ValueBoolean x -> case x of
-    False -> pretty "false"
-    True -> pretty "true"
-  ValueNull -> pretty "null"
-  ValueEnum x -> prettyName x
-  ValueList x -> brackets (sep (map prettyValue x))
-  ValueObject x -> braces (sep (map prettyObjectField x))
+prettyValue x = case x of
+  ValueVariable y -> prettyVariable y
+  ValueInt y -> prettyInt y
+  ValueFloat y -> prettyFloat y
+  ValueString y -> prettyString y
+  ValueBoolean y -> prettyBoolean y
+  ValueNull -> prettyNull
+  ValueEnum y -> prettyEnum y
+  ValueList y -> prettyList y
+  ValueObject y -> prettyObject y
+
 
 prettyVariable :: Variable -> Doc ()
-prettyVariable variable = hcat [pretty "$", prettyName (variableValue variable)]
+prettyVariable x = hcat [pretty "$", prettyName (variableValue x)]
+
+
+prettyInt :: Integer -> Doc ()
+prettyInt = pretty
+
+
+prettyFloat :: Scientific -> Doc ()
+prettyFloat x = pretty (Builder.toLazyText (scientificBuilder x))
+
+
+prettyString :: Text -> Doc ()
+prettyString x = let
+  charBuilder c = case c of
+    '"' -> Builder.fromString "\\\""
+    '\\' -> Builder.fromString "\\\\"
+    _ -> if c < ' ' || c > '~'
+      then Builder.fromString ('\\' : 'u' : printf "%04x" (fromEnum c))
+      else Builder.fromString [c]
+  in dquotes (pretty (Builder.toLazyText
+    (Text.foldl' (\b c -> b <> charBuilder c) mempty x)))
+
+
+prettyBoolean :: Bool -> Doc ()
+prettyBoolean x = case x of
+  False -> pretty "false"
+  True -> pretty "true"
+
+
+prettyNull :: Doc ()
+prettyNull = pretty "null"
+
+
+prettyEnum :: Name -> Doc ()
+prettyEnum x = prettyName x
+
+
+prettyList :: [Value] -> Doc ()
+prettyList x = brackets (sep (map prettyValue x))
+
+
+prettyObject :: [ObjectField] -> Doc ()
+prettyObject x = braces (sep (map prettyObjectField x))
+
 
 prettyObjectField :: ObjectField -> Doc ()
-prettyObjectField objectField =
+prettyObjectField x =
   sep
-    [ hcat [prettyName (objectFieldName objectField), pretty ":"]
-    , prettyValue (objectFieldValue objectField)
+    [ hcat [prettyName (objectFieldName x), pretty ":"]
+    , prettyValue (objectFieldValue x)
     ]
 
+
 prettyFragmentSpread :: FragmentSpread -> Doc ()
-prettyFragmentSpread fragmentSpread = sep
-  [ prettyFragmentName (fragmentSpreadName fragmentSpread)
-  , pretty (fmap prettyDirectives (fragmentSpreadDirectives fragmentSpread))
+prettyFragmentSpread x = sep
+  [ prettyFragmentName (fragmentSpreadName x)
+  , pretty (fmap prettyDirectives (fragmentSpreadDirectives x))
   ]
+
 
 prettyFragmentName :: FragmentName -> Doc ()
 prettyFragmentName x = sep [pretty "...", prettyName (fragmentNameValue x)]
+
 
 prettyInlineFragment :: InlineFragment -> Doc ()
 prettyInlineFragment x = sep
@@ -155,11 +213,13 @@ prettyInlineFragment x = sep
   , prettySelectionSet (inlineFragmentSelectionSet x)
   ]
 
+
 prettyTypeCondition :: TypeCondition -> Doc ()
 prettyTypeCondition x = sep
   [ pretty "on"
   , prettyNamedType (typeConditionValue x)
   ]
+
 
 prettyFragmentDefinition :: FragmentDefinition -> Doc ()
 prettyFragmentDefinition x = sep
