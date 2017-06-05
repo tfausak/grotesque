@@ -1,5 +1,7 @@
 # Grotesque
 
+> A style of ornamentation characterized by fanciful combinations of intertwined forms.
+
 Grotesque is an implementation of [GraphQL][] in Haskell.
 
 This is still a work in progress. It can currently parse and pretty-print GraphQL queries.
