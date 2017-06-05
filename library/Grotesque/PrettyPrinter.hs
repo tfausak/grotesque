@@ -1,5 +1,6 @@
 module Grotesque.PrettyPrinter where
 
+import Data.Maybe (catMaybes)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Data.Text.Lazy.Builder.Scientific (scientificBuilder)
@@ -23,13 +24,13 @@ prettyDefinition x = case x of
 
 
 prettyOperationDefinition :: OperationDefinition -> Doc ()
-prettyOperationDefinition x = sep
-  [ prettyOperationType (operationDefinitionOperationType x)
-  , pretty (fmap prettyName (operationDefinitionName x))
-  , pretty (fmap prettyVariableDefinitions (operationDefinitionVariableDefinitions x))
-  , pretty (fmap prettyDirectives (operationDefinitionDirectives x))
-  , prettySelectionSet (operationDefinitionSelectionSet x)
-  ]
+prettyOperationDefinition x = sep (catMaybes
+  [ Just (prettyOperationType (operationDefinitionOperationType x))
+  , fmap prettyName (operationDefinitionName x)
+  , fmap prettyVariableDefinitions (operationDefinitionVariableDefinitions x)
+  , fmap prettyDirectives (operationDefinitionDirectives x)
+  , Just (prettySelectionSet (operationDefinitionSelectionSet x))
+  ])
 
 
 prettyName :: Name -> Doc ()
@@ -42,11 +43,11 @@ prettyVariableDefinitions x =
 
 
 prettyVariableDefinition :: VariableDefinition -> Doc ()
-prettyVariableDefinition x = sep
-  [ hcat [prettyVariable (variableDefinitionVariable x), pretty ":"]
-  , prettyType (variableDefinitionType x)
-  , pretty (fmap prettyDefaultValue (variableDefinitionDefaultValue x))
-  ]
+prettyVariableDefinition x = sep (catMaybes
+  [ Just (hcat [prettyVariable (variableDefinitionVariable x), pretty ":"])
+  , Just (prettyType (variableDefinitionType x))
+  , fmap prettyDefaultValue (variableDefinitionDefaultValue x)
+  ])
 
 
 prettyType :: Type -> Doc ()
@@ -79,10 +80,10 @@ prettyDirectives x = sep (map prettyDirective (directivesValue x))
 
 
 prettyDirective :: Directive -> Doc ()
-prettyDirective x = sep
-  [ hcat [pretty "@", prettyName (directiveName x)]
-  , pretty (fmap prettyArguments (directiveArguments x))
-  ]
+prettyDirective x = sep (catMaybes
+  [ Just (hcat [pretty "@", prettyName (directiveName x)])
+  , fmap prettyArguments (directiveArguments x)
+  ])
 
 
 prettyOperationType :: OperationType -> Doc ()
@@ -104,13 +105,13 @@ prettySelection x = case x of
 
 
 prettyField :: Field -> Doc ()
-prettyField x = sep
-  [ pretty (fmap prettyAlias (fieldAlias x))
-  , prettyName (fieldName x)
-  , pretty (fmap prettyArguments (fieldArguments x))
-  , pretty (fmap prettyDirectives (fieldDirectives x))
-  , pretty (fmap prettySelectionSet (fieldSelectionSet x))
-  ]
+prettyField x = sep (catMaybes
+  [ fmap prettyAlias (fieldAlias x)
+  , Just (prettyName (fieldName x))
+  , fmap prettyArguments (fieldArguments x)
+  , fmap prettyDirectives (fieldDirectives x)
+  , fmap prettySelectionSet (fieldSelectionSet x)
+  ])
 
 
 prettyAlias :: Alias -> Doc ()
@@ -196,10 +197,10 @@ prettyObjectField x =
 
 
 prettyFragmentSpread :: FragmentSpread -> Doc ()
-prettyFragmentSpread x = sep
-  [ prettyFragmentName (fragmentSpreadName x)
-  , pretty (fmap prettyDirectives (fragmentSpreadDirectives x))
-  ]
+prettyFragmentSpread x = sep (catMaybes
+  [ Just (prettyFragmentName (fragmentSpreadName x))
+  , fmap prettyDirectives (fragmentSpreadDirectives x)
+  ])
 
 
 prettyFragmentName :: FragmentName -> Doc ()
@@ -207,12 +208,12 @@ prettyFragmentName x = sep [pretty "...", prettyName (fragmentNameValue x)]
 
 
 prettyInlineFragment :: InlineFragment -> Doc ()
-prettyInlineFragment x = sep
-  [ pretty "..."
-  , pretty (fmap prettyTypeCondition (inlineFragmentTypeCondition x))
-  , pretty (fmap prettyDirectives (inlineFragmentDirectives x))
-  , prettySelectionSet (inlineFragmentSelectionSet x)
-  ]
+prettyInlineFragment x = sep (catMaybes
+  [ Just (pretty "...")
+  , fmap prettyTypeCondition (inlineFragmentTypeCondition x)
+  , fmap prettyDirectives (inlineFragmentDirectives x)
+  , Just (prettySelectionSet (inlineFragmentSelectionSet x))
+  ])
 
 
 prettyTypeCondition :: TypeCondition -> Doc ()
@@ -223,12 +224,12 @@ prettyTypeCondition x = sep
 
 
 prettyFragmentDefinition :: FragmentDefinition -> Doc ()
-prettyFragmentDefinition x = sep
-  [ prettyFragmentName (fragmentName x)
-  , prettyTypeCondition (fragmentTypeCondition x)
-  , pretty (fmap prettyDirectives (fragmentDirectives x))
-  , prettySelectionSet (fragmentSelectionSet x)
-  ]
+prettyFragmentDefinition x = sep (catMaybes
+  [ Just (prettyFragmentName (fragmentName x))
+  , Just (prettyTypeCondition (fragmentTypeCondition x))
+  , fmap prettyDirectives (fragmentDirectives x)
+  , Just (prettySelectionSet (fragmentSelectionSet x))
+  ])
 
 
 prettyTypeSystemDefinition :: TypeSystemDefinition -> Doc ()

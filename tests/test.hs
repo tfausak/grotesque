@@ -1064,7 +1064,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {}"
+      "query {}"
 
     itPrettyPrints
       "a field"
@@ -1091,7 +1091,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f   }"
+      "query {f}"
 
     itPrettyPrints
       "a field alias"
@@ -1122,7 +1122,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {a: f   }"
+      "query {a: f}"
 
     itPrettyPrints
       "empty arguments"
@@ -1151,7 +1151,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f ()  }"
+      "query {f ()}"
 
     itPrettyPrints
       "a null"
@@ -1187,7 +1187,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: null)  }"
+      "query {f (a: null)}"
 
     itPrettyPrints
       "a list"
@@ -1223,7 +1223,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: [])  }"
+      "query {f (a: [])}"
 
     itPrettyPrints
       "an enum"
@@ -1261,7 +1261,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: e)  }"
+      "query {f (a: e)}"
 
     itPrettyPrints
       "a boolean"
@@ -1297,7 +1297,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: false)  }"
+      "query {f (a: false)}"
 
     itPrettyPrints
       "a variable"
@@ -1337,7 +1337,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: $v)  }"
+      "query {f (a: $v)}"
 
     itPrettyPrints
       "an int"
@@ -1373,7 +1373,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: 0)  }"
+      "query {f (a: 0)}"
 
     itPrettyPrints
       "a float"
@@ -1409,7 +1409,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: 1.2)  }"
+      "query {f (a: 1.2)}"
 
     itPrettyPrints
       "a string"
@@ -1445,7 +1445,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: \"\")  }"
+      "query {f (a: \"\")}"
 
     itPrettyPrints
       "an object"
@@ -1481,7 +1481,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: {})  }"
+      "query {f (a: {})}"
 
     itPrettyPrints
       "an object with a field"
@@ -1524,7 +1524,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    { f (a: {k: null})  }"
+      "query {f (a: {k: null})}"
 
     itPrettyPrints
       "a mutation"
@@ -1541,7 +1541,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "mutation    {}"
+      "mutation {}"
 
     itPrettyPrints
       "a subscription"
@@ -1558,7 +1558,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "subscription    {}"
+      "subscription {}"
 
     itPrettyPrints
       "an empty variable definition"
@@ -1577,7 +1577,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query  ()  {}"
+      "query () {}"
 
     itPrettyPrints
       "a named variable definition"
@@ -1610,7 +1610,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query  ($v: t )  {}"
+      "query ($v: t) {}"
 
     itPrettyPrints
       "a list variable definition"
@@ -1645,7 +1645,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query  ($v: [t] )  {}"
+      "query ($v: [t]) {}"
 
     itPrettyPrints
       "a non-null named variable definition"
@@ -1678,7 +1678,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query  ($v: t! )  {}"
+      "query ($v: t!) {}"
 
     itPrettyPrints
       "a non-null list variable definition"
@@ -1713,7 +1713,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query  ($v: [t]! )  {}"
+      "query ($v: [t]!) {}"
 
     itPrettyPrints
       "a variable definition with a default value"
@@ -1748,7 +1748,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query  ($v: t = null)  {}"
+      "query ($v: t = null) {}"
 
     itPrettyPrints
       "a directive"
@@ -1774,7 +1774,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query   @d  {}"
+      "query @d {}"
 
     itPrettyPrints
       "a directive with empty arguments"
@@ -1802,7 +1802,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query   @d () {}"
+      "query @d () {}"
 
     itPrettyPrints
       "a directive with an argument"
@@ -1837,7 +1837,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query   @d (a: null) {}"
+      "query @d (a: null) {}"
 
     itPrettyPrints
       "a fragment spread"
@@ -1863,7 +1863,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {... s }"
+      "query {... s}"
 
     itPrettyPrints
       "a fragment spread with a directive"
@@ -1898,7 +1898,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {... s @d }"
+      "query {... s @d}"
 
     itPrettyPrints
       "an inline fragment"
@@ -1923,7 +1923,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {...   {}}"
+      "query {... {}}"
 
     itPrettyPrints
       "an inline fragment with a type condition"
@@ -1954,7 +1954,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {... on t  {}}"
+      "query {... on t {}}"
 
     itPrettyPrints
       "an inline fragment with a directive"
@@ -1988,7 +1988,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "query    {...  @d  {}}"
+      "query {... @d {}}"
 
     itPrettyPrints
       "a fragment definition"
@@ -2014,7 +2014,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "... f on t  {}"
+      "... f on t {}"
 
     itPrettyPrints
       "a fragment definition with a directive"
@@ -2049,7 +2049,7 @@ main = hspec . parallel $ do
             }
           ]
         }
-      "... f on t @d  {}"
+      "... f on t @d {}"
 
 
 itParses :: HasCallStack => String -> Text -> Document -> Spec
