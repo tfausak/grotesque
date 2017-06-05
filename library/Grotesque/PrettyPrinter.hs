@@ -19,6 +19,7 @@ prettyDefinition :: Definition -> Doc ()
 prettyDefinition x = case x of
   DefinitionOperation y -> prettyOperationDefinition y
   DefinitionFragment y -> prettyFragmentDefinition y
+  DefinitionTypeSystem y -> prettyTypeSystemDefinition y
 
 
 prettyOperationDefinition :: OperationDefinition -> Doc ()
@@ -228,3 +229,7 @@ prettyFragmentDefinition x = sep
   , pretty (fmap prettyDirectives (fragmentDirectives x))
   , prettySelectionSet (fragmentSelectionSet x)
   ]
+
+
+prettyTypeSystemDefinition :: TypeSystemDefinition -> Doc ()
+prettyTypeSystemDefinition _ = mempty -- TODO

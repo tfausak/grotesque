@@ -24,6 +24,7 @@ getDefinition :: Parser Definition
 getDefinition = choice
   [ fmap DefinitionOperation getOperationDefinition
   , fmap DefinitionFragment getFragmentDefinition
+  , fmap DefinitionTypeSystem getTypeSystemDefinition
   ]
 
 
@@ -564,3 +565,7 @@ getFragmentDefinition = do
     , fragmentDirectives = directives
     , fragmentSelectionSet = selectionSet
     }
+
+
+getTypeSystemDefinition :: Parser TypeSystemDefinition
+getTypeSystemDefinition = fail "" -- TODO

@@ -8,6 +8,7 @@ import Test.Hspec
 import Test.Hspec.Megaparsec
 import Text.Megaparsec
 
+
 main :: IO ()
 main = hspec . parallel $ do
 
@@ -2050,12 +2051,14 @@ main = hspec . parallel $ do
         }
       "... f on t @d  {}"
 
+
 itParses :: HasCallStack => String -> Text -> Document -> Spec
 itParses description input document =
   it ("parses " ++ description)
     (shouldParse
       (parse getDocument "" input)
       document)
+
 
 itPrettyPrints :: HasCallStack => String -> Document -> Text -> Spec
 itPrettyPrints description document output =

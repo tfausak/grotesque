@@ -14,6 +14,7 @@ newtype Document = Document
 data Definition
   = DefinitionOperation OperationDefinition
   | DefinitionFragment FragmentDefinition
+  | DefinitionTypeSystem TypeSystemDefinition
   deriving (Eq, Show)
 
 
@@ -204,4 +205,110 @@ data FragmentDefinition = FragmentDefinition
   , fragmentTypeCondition :: TypeCondition
   , fragmentDirectives :: Maybe Directives
   , fragmentSelectionSet :: SelectionSet
+  } deriving (Eq, Show)
+
+
+data TypeSystemDefinition
+  = TypeSystemDefinitionSchema SchemaDefinition
+  | TypeSystemDefinitionType TypeDefinition
+  | TypeSystemDefinitionTypeExtension TypeExtensionDefinition
+  | TypeSystemDefinitionDirective DirectiveDefinition
+  deriving (Eq, Show)
+
+
+data SchemaDefinition = SchemaDefinition
+  { schemaDefinitionDirectives :: Directives
+  , schemaDefinitionOperationTypes :: [OperationTypeDefinition]
+  } deriving (Eq, Show)
+
+
+data OperationTypeDefinition = OperationTypeDefinition
+  { operationTypeDefinitionOperation :: OperationType
+  , operationTypeDefinitionType :: NamedType
+  } deriving (Eq, Show)
+
+
+data TypeDefinition
+  = TypeDefinitionScalar ScalarTypeDefinition
+  | TypeDefinitionObject ObjectTypeDefinition
+  | TypeDefinitionInterface InterfaceTypeDefinition
+  | TypeDefinitionUnion UnionTypeDefinition
+  | TypeDefinitionEnum EnumTypeDefinition
+  | TypeDefinitionInputObject InputObjectTypeDefinition
+  deriving (Eq, Show)
+
+
+data ScalarTypeDefinition = ScalarTypeDefinition
+  { scalarTypeDefinitionName :: Name
+  , scalarTypeDefinitionDirectives :: Maybe Directives
+  } deriving (Eq, Show)
+
+
+data ObjectTypeDefinition = ObjectTypeDefinition
+  { objectTypeDefinitionName :: Name
+  , objectTypeDefinitionInterfaces :: Maybe [NamedType]
+  , objectTypeDefinitionDirectives :: Maybe Directives
+  , objectTypeDefinitionFields :: [FieldDefinition]
+  } deriving (Eq, Show)
+
+
+data FieldDefinition = FieldDefinition
+  { fieldDefinitionName :: Name
+  , fieldDefinitionArguments :: [InputValueDefinition]
+  , fieldDefinitionType :: Type
+  , fieldDefinitionDirectives :: Directives
+  } deriving (Eq, Show)
+
+
+data InputValueDefinition = InputValueDefinition
+  { inputValueDefinitionName :: Name
+  , inputValueDefinitionType :: Type
+  , inputValueDefinitionDefaultValue :: Maybe DefaultValue
+  , inputValueDefinitionDirectives :: Maybe Directives
+  } deriving (Eq, Show)
+
+
+data InterfaceTypeDefinition = InterfaceTypeDefinition
+  { interfaceTypeDefinitionName :: Name
+  , interfaceTypeDefinitionDirectives :: Maybe Directives
+  , interfaceTypeDefinitionField :: [FieldDefinition]
+  } deriving (Eq, Show)
+
+
+data UnionTypeDefinition = UnionTypeDefinition
+  { unionTypeDefinitionName :: Name
+  , unionTypeDefinitionDirectives :: Maybe Directives
+  , unionTypeDefinitionTypes :: [NamedType]
+  } deriving (Eq, Show)
+
+
+data EnumTypeDefinition = EnumTypeDefinition
+  { enumTypeDefinitionName :: Name
+  , enumTypeDefinitionDirectives :: Maybe Directives
+  , enumTypeDefinitionValues :: [EnumValueDefinition]
+  } deriving (Eq, Show)
+
+
+data EnumValueDefinition = EnumValueDefinition
+  { enumValueDefinitionName :: Name
+  , enumValueDefinitionDirectives :: Maybe Directives
+  } deriving (Eq, Show)
+
+
+data InputObjectTypeDefinition = InputObjectTypeDefinition
+  { inputObjectTypeDefinitionName :: Name
+  , inputObjectTypeDefinitionDirectives :: Maybe Directives
+  , inputObjectTypeDefinitionField :: [InputValueDefinition]
+  } deriving (Eq, Show)
+
+
+newtype TypeExtensionDefinition = TypeExtensionDefinition
+  { typeExtensionDefinitionValue :: ObjectTypeDefinition
+  } deriving (Eq, Show)
+
+
+data DirectiveDefinition = DirectiveDefinition
+  { directiveDefinitionName :: Name
+  , directiveDefinitionArguments :: Maybe [InputValueDefinition]
+  , directiveDefinitionLocations :: [Name]
   } deriving (Eq, Show)
