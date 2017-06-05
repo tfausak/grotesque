@@ -202,12 +202,14 @@ getField = do
   alias <- optional (try getAlias)
   name <- getName
   arguments <- optional (try getArguments)
+  directives <- optional (try getDirectives)
+  selectionSet <- optional (try getSelectionSet)
   pure Field
     { fieldAlias = alias
     , fieldName = name
     , fieldArguments = arguments
-    , fieldDirectives = Nothing
-    , fieldSelectionSet = Nothing
+    , fieldDirectives = directives
+    , fieldSelectionSet = selectionSet
     }
 
 

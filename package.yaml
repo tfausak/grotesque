@@ -23,6 +23,7 @@ tests:
   test:
     dependencies:
       - grotesque
+      - heredoc
       - hspec
       - hspec-megaparsec
     ghc-options:
