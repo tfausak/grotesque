@@ -233,4 +233,40 @@ prettyFragmentDefinition x = sep (catMaybes
 
 
 prettyTypeSystemDefinition :: TypeSystemDefinition -> Doc ()
-prettyTypeSystemDefinition _ = mempty -- TODO
+prettyTypeSystemDefinition x = case x of
+  TypeSystemDefinitionSchema y -> prettySchemaDefinition y
+  TypeSystemDefinitionType y -> prettyTypeDefinition y
+  TypeSystemDefinitionTypeExtension y -> prettyTypeExtensionDefinition y
+  TypeSystemDefinitionDirective y -> prettyDirectiveDefinition y
+
+
+prettySchemaDefinition :: SchemaDefinition -> Doc ()
+prettySchemaDefinition x = sep (catMaybes
+  [ Just (pretty "schema")
+  , fmap prettyDirectives (schemaDefinitionDirectives x)
+  , Just (prettyOperationTypeDefinitions (schemaDefinitionOperationTypes x))
+  ])
+
+
+prettyOperationTypeDefinitions :: OperationTypeDefinitions -> Doc ()
+prettyOperationTypeDefinitions x =
+  braces (sep (map prettyOperationTypeDefinition (operationTypeDefinitionsValue x)))
+
+
+prettyOperationTypeDefinition :: OperationTypeDefinition -> Doc ()
+prettyOperationTypeDefinition x = sep
+  [ hcat [prettyOperationType (operationTypeDefinitionOperation x), pretty ":"]
+  , prettyNamedType (operationTypeDefinitionType x)
+  ]
+
+
+prettyTypeDefinition :: TypeDefinition -> Doc ()
+prettyTypeDefinition _ = mempty -- TODO
+
+
+prettyTypeExtensionDefinition :: TypeExtensionDefinition -> Doc ()
+prettyTypeExtensionDefinition _ = mempty -- TODO
+
+
+prettyDirectiveDefinition :: DirectiveDefinition -> Doc ()
+prettyDirectiveDefinition _ = mempty -- TODO

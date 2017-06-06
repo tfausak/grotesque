@@ -217,8 +217,13 @@ data TypeSystemDefinition
 
 
 data SchemaDefinition = SchemaDefinition
-  { schemaDefinitionDirectives :: Directives
-  , schemaDefinitionOperationTypes :: [OperationTypeDefinition]
+  { schemaDefinitionDirectives :: Maybe Directives
+  , schemaDefinitionOperationTypes :: OperationTypeDefinitions
+  } deriving (Eq, Show)
+
+
+newtype OperationTypeDefinitions = OperationTypeDefinitions
+  { operationTypeDefinitionsValue :: [OperationTypeDefinition]
   } deriving (Eq, Show)
 
 

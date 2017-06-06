@@ -570,4 +570,51 @@ getFragmentDefinition = do
 
 
 getTypeSystemDefinition :: Parser TypeSystemDefinition
-getTypeSystemDefinition = fail "" -- TODO
+getTypeSystemDefinition = choice
+  [ fmap TypeSystemDefinitionSchema getSchemaDefinition
+  , fmap TypeSystemDefinitionType getTypeDefinition
+  , fmap TypeSystemDefinitionTypeExtension getTypeExtensionDefinition
+  , fmap TypeSystemDefinitionDirective getDirectiveDefinition
+  ]
+
+
+getSchemaDefinition :: Parser SchemaDefinition
+getSchemaDefinition = do
+  _ <- getSymbol "schema"
+  directives <- optional getDirectives
+  operationTypeDefinitions <- getOperationTypeDefintions
+  pure SchemaDefinition
+    { schemaDefinitionDirectives = directives
+    , schemaDefinitionOperationTypes = operationTypeDefinitions
+    }
+
+
+getOperationTypeDefintions :: Parser OperationTypeDefinitions
+getOperationTypeDefintions = getInBraces (do
+  value <- many getOperationTypeDefintion
+  pure OperationTypeDefinitions
+    { operationTypeDefinitionsValue = value
+    })
+
+
+getOperationTypeDefintion :: Parser OperationTypeDefinition
+getOperationTypeDefintion = do
+  operation <- getOperationType
+  _ <- getColon
+  type_ <- getNamedType
+  pure OperationTypeDefinition
+    { operationTypeDefinitionOperation = operation
+    , operationTypeDefinitionType = type_
+    }
+
+
+getTypeDefinition :: Parser TypeDefinition
+getTypeDefinition = fail "" -- TODO
+
+
+getTypeExtensionDefinition :: Parser TypeExtensionDefinition
+getTypeExtensionDefinition = fail "" -- TODO
+
+
+getDirectiveDefinition :: Parser DirectiveDefinition
+getDirectiveDefinition = fail "" -- TODO
