@@ -631,7 +631,73 @@ getScalarTypeDefinition = do
 
 
 getObjectTypeDefinition :: Parser ObjectTypeDefinition
-getObjectTypeDefinition = fail "" -- TODO
+getObjectTypeDefinition = do
+  _ <- getSymbol "type"
+  name <- getName
+  interfaces <- optional getInterfaces
+  directives <- optional getDirectives
+  fields <- getFieldDefinitions
+  pure ObjectTypeDefinition
+    { objectTypeDefinitionName = name
+    , objectTypeDefinitionInterfaces = interfaces
+    , objectTypeDefinitionDirectives = directives
+    , objectTypeDefinitionFields = fields
+    }
+
+
+getInterfaces :: Parser Interfaces
+getInterfaces = do
+  _ <- getSymbol "implements"
+  value <- many getNamedType
+  pure Interfaces
+    { interfacesValue = value
+    }
+
+
+getFieldDefinitions :: Parser FieldDefinitions
+getFieldDefinitions = getInBraces (do
+  value <- many getFieldDefinition
+  pure FieldDefinitions
+    { fieldDefinitionsValue = value
+    })
+
+
+getFieldDefinition :: Parser FieldDefinition
+getFieldDefinition = do
+  name <- getName
+  arguments <- optional getInputValueDefinitions
+  _ <- getColon
+  type_ <- getType
+  directives <- optional getDirectives
+  pure FieldDefinition
+    { fieldDefinitionName = name
+    , fieldDefinitionArguments = arguments
+    , fieldDefinitionType = type_
+    , fieldDefinitionDirectives = directives
+    }
+
+
+getInputValueDefinitions :: Parser InputValueDefinitions
+getInputValueDefinitions = getInParentheses (do
+  value <- many getInputValueDefinition
+  pure InputValueDefinitions
+    { inputValueDefinitionsValue = value
+    })
+
+
+getInputValueDefinition :: Parser InputValueDefinition
+getInputValueDefinition = do
+  name <- getName
+  _ <- getColon
+  type_ <- getType
+  defaultValue <- optional getDefaultValue
+  directives <- optional getDirectives
+  pure InputValueDefinition
+    { inputValueDefinitionName = name
+    , inputValueDefinitionType = type_
+    , inputValueDefinitionDefaultValue = defaultValue
+    , inputValueDefinitionDirectives = directives
+    }
 
 
 getInterfaceTypeDefinition :: Parser InterfaceTypeDefinition

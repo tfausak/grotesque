@@ -251,17 +251,32 @@ data ScalarTypeDefinition = ScalarTypeDefinition
 
 data ObjectTypeDefinition = ObjectTypeDefinition
   { objectTypeDefinitionName :: Name
-  , objectTypeDefinitionInterfaces :: Maybe [NamedType]
+  , objectTypeDefinitionInterfaces :: Maybe Interfaces
   , objectTypeDefinitionDirectives :: Maybe Directives
-  , objectTypeDefinitionFields :: [FieldDefinition]
+  , objectTypeDefinitionFields :: FieldDefinitions
+  } deriving (Eq, Show)
+
+
+newtype Interfaces = Interfaces
+  { interfacesValue :: [NamedType]
+  } deriving (Eq, Show)
+
+
+newtype FieldDefinitions = FieldDefinitions
+  { fieldDefinitionsValue :: [FieldDefinition]
   } deriving (Eq, Show)
 
 
 data FieldDefinition = FieldDefinition
   { fieldDefinitionName :: Name
-  , fieldDefinitionArguments :: [InputValueDefinition]
+  , fieldDefinitionArguments :: Maybe InputValueDefinitions
   , fieldDefinitionType :: Type
-  , fieldDefinitionDirectives :: Directives
+  , fieldDefinitionDirectives :: Maybe Directives
+  } deriving (Eq, Show)
+
+
+newtype InputValueDefinitions = InputValueDefinitions
+  { inputValueDefinitionsValue :: [InputValueDefinition]
   } deriving (Eq, Show)
 
 

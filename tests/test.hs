@@ -228,6 +228,42 @@ main = hspec . parallel $ do
       " scalar t @ d "
       Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionScalar (ScalarTypeDefinition {scalarTypeDefinitionName = Name {nameValue = "t"}, scalarTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})})))]}
 
+    itParses "an object type definition"
+      " type t { } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+
+    itParses "an object type definition with an interface"
+      " type t implements i { } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Just (Interfaces {interfacesValue = [NamedType {namedTypeValue = Name {nameValue = "i"}}]}), objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+
+    itParses "an object type definition with a directive"
+      " type t @ d { } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+
+    itParses "an object type definition with a field definition"
+      " type t { f: s } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+
+    itParses "an object type definition with a field definition with empty arguments"
+      " type t { f ( ) : s } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = []}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+
+    itParses "an object type definition with a field definition with an argument"
+      " type t { f ( a : u ) : s } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "a"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "u"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Nothing}]}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+
+    itParses "an object type definition with a field definition with an argument with a default value"
+      " type t { f ( a : u = d ) : s } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "a"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "u"}}), inputValueDefinitionDefaultValue = Just (DefaultValue {defaultValueValue = ValueEnum (Name {nameValue = "d"})}), inputValueDefinitionDirectives = Nothing}]}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+
+    itParses "an object type definition with a field definition with an argument with a directive"
+      " type t { f ( a : u @ d ) : s } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "a"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "u"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})}]}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+
+    itParses "an object type definition with a field definition with a directive"
+      " type t { f : s @ d } "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})}]}})))]}
+
   context "pretty printer" $ do
 
     itPrettyPrints "an empty document"
@@ -389,6 +425,42 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
     itPrettyPrints "a scalar with a directive"
       Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionScalar (ScalarTypeDefinition {scalarTypeDefinitionName = Name {nameValue = "t"}, scalarTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})})))]}
       "scalar t @d"
+
+    itPrettyPrints "an object type definition"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+      "type t {}"
+
+    itPrettyPrints "an object type definition with an interface"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Just (Interfaces {interfacesValue = [NamedType {namedTypeValue = Name {nameValue = "i"}}]}), objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+      "type t implements i {}"
+
+    itPrettyPrints "an object type definition with a directive"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+      "type t @d {}"
+
+    itPrettyPrints "an object type definition with a field definition"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+      "type t {f: s}"
+
+    itPrettyPrints "an object type definition with a field definition with empty arguments"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = []}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+      "type t {f(): s}"
+
+    itPrettyPrints "an object type definition with a field definition with an argument"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "a"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "u"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Nothing}]}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+      "type t {f(a: u): s}"
+
+    itPrettyPrints "an object type definition with a field definition with an argument with a default value"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "a"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "u"}}), inputValueDefinitionDefaultValue = Just (DefaultValue {defaultValueValue = ValueEnum (Name {nameValue = "d"})}), inputValueDefinitionDirectives = Nothing}]}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+      "type t {f(a: u = d): s}"
+
+    itPrettyPrints "an object type definition with a field definition with an argument with a directive"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Just (InputValueDefinitions {inputValueDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "a"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "u"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})}]}), fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+      "type t {f(a: u @d): s}"
+
+    itPrettyPrints "an object type definition with a field definition with a directive"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})}]}})))]}
+      "type t {f: s @d}"
 
 
 itParses :: HasCallStack => String -> Text -> Document -> Spec

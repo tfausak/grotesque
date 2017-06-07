@@ -279,7 +279,53 @@ prettyScalarTypeDefinition x = sep (catMaybes
 
 
 prettyObjectTypeDefinition :: ObjectTypeDefinition -> Doc ()
-prettyObjectTypeDefinition _ = mempty -- TODO
+prettyObjectTypeDefinition x = sep (catMaybes
+  [ Just (pretty "type")
+  , Just (prettyName (objectTypeDefinitionName x))
+  , fmap prettyInterfaces (objectTypeDefinitionInterfaces x)
+  , fmap prettyDirectives (objectTypeDefinitionDirectives x)
+  , Just (prettyFieldDefinitions (objectTypeDefinitionFields x))
+  ])
+
+
+prettyInterfaces :: Interfaces -> Doc ()
+prettyInterfaces x = case interfacesValue x of
+  [] -> mempty
+  y -> sep (pretty "implements" : map prettyNamedType y)
+
+
+prettyFieldDefinitions :: FieldDefinitions -> Doc ()
+prettyFieldDefinitions x =
+  braces (sep (map prettyFieldDefinition (fieldDefinitionsValue x)))
+
+
+prettyFieldDefinition :: FieldDefinition -> Doc ()
+prettyFieldDefinition x = sep (catMaybes
+  [ Just (hcat (catMaybes
+    [ Just (prettyName (fieldDefinitionName x))
+    , fmap prettyInputValueDefinitions (fieldDefinitionArguments x)
+    , Just (pretty ":")
+    ]))
+  , Just (prettyType (fieldDefinitionType x))
+  , fmap prettyDirectives (fieldDefinitionDirectives x)
+  ])
+
+
+prettyInputValueDefinitions :: InputValueDefinitions -> Doc ()
+prettyInputValueDefinitions x =
+  parens (sep (map prettyInputValueDefinition (inputValueDefinitionsValue x)))
+
+
+prettyInputValueDefinition :: InputValueDefinition -> Doc ()
+prettyInputValueDefinition x = sep (catMaybes
+  [ Just (hcat
+    [ prettyName (inputValueDefinitionName x)
+    , pretty ":"
+    ])
+  , Just (prettyType (inputValueDefinitionType x))
+  , fmap prettyDefaultValue (inputValueDefinitionDefaultValue x)
+  , fmap prettyDirectives (inputValueDefinitionDirectives x)
+  ])
 
 
 prettyInterfaceTypeDefinition :: InterfaceTypeDefinition -> Doc ()
