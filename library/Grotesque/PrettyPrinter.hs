@@ -261,7 +261,41 @@ prettyOperationTypeDefinition x = sep
 
 
 prettyTypeDefinition :: TypeDefinition -> Doc ()
-prettyTypeDefinition _ = mempty -- TODO
+prettyTypeDefinition x = case x of
+  TypeDefinitionScalar y -> prettyScalarTypeDefinition y
+  TypeDefinitionObject y -> prettyObjectTypeDefinition y
+  TypeDefinitionInterface y -> prettyInterfaceTypeDefinition y
+  TypeDefinitionUnion y -> prettyUnionTypeDefinition y
+  TypeDefinitionEnum y -> prettyEnumTypeDefinition y
+  TypeDefinitionInputObject y -> prettyInputObjectTypeDefinition y
+
+
+prettyScalarTypeDefinition :: ScalarTypeDefinition -> Doc ()
+prettyScalarTypeDefinition x = sep (catMaybes
+  [ Just (pretty "scalar")
+  , Just (prettyName (scalarTypeDefinitionName x))
+  , fmap prettyDirectives (scalarTypeDefinitionDirectives x)
+  ])
+
+
+prettyObjectTypeDefinition :: ObjectTypeDefinition -> Doc ()
+prettyObjectTypeDefinition _ = mempty -- TODO
+
+
+prettyInterfaceTypeDefinition :: InterfaceTypeDefinition -> Doc ()
+prettyInterfaceTypeDefinition _ = mempty -- TODO
+
+
+prettyUnionTypeDefinition :: UnionTypeDefinition -> Doc ()
+prettyUnionTypeDefinition _ = mempty -- TODO
+
+
+prettyEnumTypeDefinition :: EnumTypeDefinition -> Doc ()
+prettyEnumTypeDefinition _ = mempty -- TODO
+
+
+prettyInputObjectTypeDefinition :: InputObjectTypeDefinition -> Doc ()
+prettyInputObjectTypeDefinition _ = mempty -- TODO
 
 
 prettyTypeExtensionDefinition :: TypeExtensionDefinition -> Doc ()

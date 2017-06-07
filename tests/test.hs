@@ -220,6 +220,14 @@ main = hspec . parallel $ do
       " schema { query : t } "
       Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionSchema (SchemaDefinition {schemaDefinitionDirectives = Nothing, schemaDefinitionOperationTypes = OperationTypeDefinitions {operationTypeDefinitionsValue = [OperationTypeDefinition {operationTypeDefinitionOperation = OperationTypeQuery, operationTypeDefinitionType = NamedType {namedTypeValue = Name {nameValue = "t"}}}]}}))]}
 
+    itParses "a scalar"
+      " scalar t "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionScalar (ScalarTypeDefinition {scalarTypeDefinitionName = Name {nameValue = "t"}, scalarTypeDefinitionDirectives = Nothing})))]}
+
+    itParses "a scalar with a directive"
+      " scalar t @ d "
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionScalar (ScalarTypeDefinition {scalarTypeDefinitionName = Name {nameValue = "t"}, scalarTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})})))]}
+
   context "pretty printer" $ do
 
     itPrettyPrints "an empty document"
@@ -373,6 +381,14 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
     itPrettyPrints "a schema with an operation type"
       Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionSchema (SchemaDefinition {schemaDefinitionDirectives = Nothing, schemaDefinitionOperationTypes = OperationTypeDefinitions {operationTypeDefinitionsValue = [OperationTypeDefinition {operationTypeDefinitionOperation = OperationTypeQuery, operationTypeDefinitionType = NamedType {namedTypeValue = Name {nameValue = "t"}}}]}}))]}
       "schema {query: t}"
+
+    itPrettyPrints "a scalar"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionScalar (ScalarTypeDefinition {scalarTypeDefinitionName = Name {nameValue = "t"}, scalarTypeDefinitionDirectives = Nothing})))]}
+      "scalar t"
+
+    itPrettyPrints "a scalar with a directive"
+      Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionScalar (ScalarTypeDefinition {scalarTypeDefinitionName = Name {nameValue = "t"}, scalarTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})})))]}
+      "scalar t @d"
 
 
 itParses :: HasCallStack => String -> Text -> Document -> Spec

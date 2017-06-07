@@ -609,7 +609,45 @@ getOperationTypeDefintion = do
 
 
 getTypeDefinition :: Parser TypeDefinition
-getTypeDefinition = fail "" -- TODO
+getTypeDefinition = choice
+  [ fmap TypeDefinitionScalar getScalarTypeDefinition
+  , fmap TypeDefinitionObject getObjectTypeDefinition
+  , fmap TypeDefinitionInterface getInterfaceTypeDefinition
+  , fmap TypeDefinitionUnion getUnionTypeDefinition
+  , fmap TypeDefinitionEnum getEnumTypeDefinition
+  , fmap TypeDefinitionInputObject getInputObjectTypeDefinition
+  ]
+
+
+getScalarTypeDefinition :: Parser ScalarTypeDefinition
+getScalarTypeDefinition = do
+  _ <- getSymbol "scalar"
+  name <- getName
+  directives <- optional getDirectives
+  pure ScalarTypeDefinition
+    { scalarTypeDefinitionName = name
+    , scalarTypeDefinitionDirectives = directives
+    }
+
+
+getObjectTypeDefinition :: Parser ObjectTypeDefinition
+getObjectTypeDefinition = fail "" -- TODO
+
+
+getInterfaceTypeDefinition :: Parser InterfaceTypeDefinition
+getInterfaceTypeDefinition = fail "" -- TODO
+
+
+getUnionTypeDefinition :: Parser UnionTypeDefinition
+getUnionTypeDefinition = fail "" -- TODO
+
+
+getEnumTypeDefinition :: Parser EnumTypeDefinition
+getEnumTypeDefinition = fail "" -- TODO
+
+
+getInputObjectTypeDefinition :: Parser InputObjectTypeDefinition
+getInputObjectTypeDefinition = fail "" -- TODO
 
 
 getTypeExtensionDefinition :: Parser TypeExtensionDefinition
