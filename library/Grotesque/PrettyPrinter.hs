@@ -161,6 +161,9 @@ prettyString x = let
     '"' -> Builder.fromString "\\\""
     '\\' -> Builder.fromString "\\\\"
     _ -> if c < ' ' || c > '~'
+      -- TODO: This prints characters higher than U+FFFF as a single escaped
+      -- character with more than 4 digits. Since the escape needs to be
+      -- exactly 4 digits, big characters should be broken up.
       then Builder.fromString ('\\' : 'u' : printf "%04x" (fromEnum c))
       else Builder.fromString [c]
   in dquotes (pretty (Builder.toLazyText
