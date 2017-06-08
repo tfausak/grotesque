@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -493,4 +494,4 @@ prettyPrintDocument = renderStrict . layoutPretty (LayoutOptions Unbounded) . pr
 prop_round_trip :: Property
 prop_round_trip = property $ do
   document <- forAll genDocument
-  parseDocument (prettyPrintDocument document) === pure document
+  tripping document prettyPrintDocument parseDocument

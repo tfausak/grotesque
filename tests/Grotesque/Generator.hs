@@ -103,9 +103,8 @@ genObjectField = ObjectField
   <*> genValue
 
 
--- TODO: make directives non-empty
 genDirectives :: Gen IO Directives
-genDirectives = Directives <$> G.list (R.linear 1 2) genDirective
+genDirectives = Directives <$> G.nonEmpty (R.linear 1 2) genDirective
 
 
 genDirective :: Gen IO Directive
@@ -228,8 +227,9 @@ genObjectTypeDefinition = ObjectTypeDefinition
   <*> genFieldDefinitions
 
 
+-- TODO: make interfaces non-empty
 genInterfaces :: Gen IO Interfaces
-genInterfaces = Interfaces <$> G.list (R.linear 0 2) genNamedType
+genInterfaces = Interfaces <$> G.list (R.linear 1 2) genNamedType
 
 
 genFieldDefinitions :: Gen IO FieldDefinitions

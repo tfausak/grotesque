@@ -1,5 +1,6 @@
 module Grotesque.Parser where
 
+import Data.List.NonEmpty (nonEmpty)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Grotesque.Language
@@ -148,10 +149,12 @@ getDefaultValue = do
 
 getDirectives :: Parser Directives
 getDirectives = do
-  value <- some getDirective
-  pure Directives
-    { directivesValue = value
-    }
+  list <- some getDirective
+  case nonEmpty list of
+    Nothing -> fail "impossible"
+    Just value -> pure Directives
+      { directivesValue = value
+      }
 
 
 getDirective :: Parser Directive

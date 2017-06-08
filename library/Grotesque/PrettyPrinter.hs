@@ -1,5 +1,6 @@
 module Grotesque.PrettyPrinter where
 
+import Data.List.NonEmpty (toList)
 import Data.Maybe (catMaybes)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
@@ -76,7 +77,7 @@ prettyDefaultValue x = sep [pretty "=", prettyValue (defaultValueValue x)]
 
 
 prettyDirectives :: Directives -> Doc ()
-prettyDirectives x = sep (map prettyDirective (directivesValue x))
+prettyDirectives x = sep (map prettyDirective (toList (directivesValue x)))
 
 
 prettyDirective :: Directive -> Doc ()

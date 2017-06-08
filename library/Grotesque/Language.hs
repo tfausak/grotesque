@@ -1,5 +1,6 @@
 module Grotesque.Language where
 
+import Data.List.NonEmpty (NonEmpty)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 
@@ -118,7 +119,7 @@ data ObjectField = ObjectField
 
 -- | <https://facebook.github.io/graphql/#Directives>
 newtype Directives = Directives
-  { directivesValue :: [Directive]
+  { directivesValue :: NonEmpty Directive
   } deriving (Eq, Show)
 
 
