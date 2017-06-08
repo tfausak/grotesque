@@ -6,6 +6,7 @@ import Data.Scientific
 import Grotesque
 import Hedgehog
 
+import qualified Data.Text as Text
 import qualified Hedgehog.Gen as G
 import qualified Hedgehog.Range as R
 
@@ -35,9 +36,16 @@ genOperationType :: Gen IO OperationType
 genOperationType = G.enumBounded
 
 
--- TODO: generate better names
 genName :: Gen IO Name
-genName = Name <$> G.text (R.linear 1 100) G.alpha
+genName = do
+  let
+    underscore = ['_']
+    uppers = ['A' .. 'Z']
+    lowers = ['a' .. 'z']
+    digits = ['0' .. '9']
+  first <- G.element $ concat [underscore, uppers, lowers]
+  rest <- G.list (R.linear 0 7) . G.element $ concat [underscore, uppers, lowers, digits]
+  pure . Name . Text.pack $ first : rest
 
 
 genVariableDefinitions :: Gen IO VariableDefinitions
