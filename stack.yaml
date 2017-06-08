@@ -1,4 +1,5 @@
 resolver: lts-8.0
 
 extra-deps:
+  - hedgehog-0.2.2
   - prettyprinter-1.0.1

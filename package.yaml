@@ -23,6 +23,7 @@ tests:
   test:
     dependencies:
       - grotesque
+      - hedgehog
       - heredoc
       - hspec
       - hspec-megaparsec

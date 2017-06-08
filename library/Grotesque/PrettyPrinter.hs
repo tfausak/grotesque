@@ -198,13 +198,14 @@ prettyObjectField x =
 
 prettyFragmentSpread :: FragmentSpread -> Doc ()
 prettyFragmentSpread x = sep (catMaybes
-  [ Just (prettyFragmentName (fragmentSpreadName x))
+  [ Just (pretty "...")
+  , Just (prettyFragmentName (fragmentSpreadName x))
   , fmap prettyDirectives (fragmentSpreadDirectives x)
   ])
 
 
 prettyFragmentName :: FragmentName -> Doc ()
-prettyFragmentName x = sep [pretty "...", prettyName (fragmentNameValue x)]
+prettyFragmentName x = prettyName (fragmentNameValue x)
 
 
 prettyInlineFragment :: InlineFragment -> Doc ()
@@ -225,7 +226,8 @@ prettyTypeCondition x = sep
 
 prettyFragmentDefinition :: FragmentDefinition -> Doc ()
 prettyFragmentDefinition x = sep (catMaybes
-  [ Just (prettyFragmentName (fragmentName x))
+  [ Just (pretty "fragment")
+  , Just (prettyFragmentName (fragmentName x))
   , Just (prettyTypeCondition (fragmentTypeCondition x))
   , fmap prettyDirectives (fragmentDirectives x)
   , Just (prettySelectionSet (fragmentSelectionSet x))

@@ -33,7 +33,7 @@ data OperationType
   = OperationTypeQuery
   | OperationTypeMutation
   | OperationTypeSubscription
-  deriving (Eq, Show)
+  deriving (Bounded, Enum, Eq, Show)
 
 
 -- | <https://facebook.github.io/graphql/#Name>
