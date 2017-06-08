@@ -259,7 +259,7 @@ data ObjectTypeDefinition = ObjectTypeDefinition
 
 
 newtype Interfaces = Interfaces
-  { interfacesValue :: [NamedType]
+  { interfacesValue :: NonEmpty NamedType
   } deriving (Eq, Show)
 
 

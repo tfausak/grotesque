@@ -651,10 +651,12 @@ getObjectTypeDefinition = do
 getInterfaces :: Parser Interfaces
 getInterfaces = do
   _ <- getSymbol "implements"
-  value <- many getNamedType
-  pure Interfaces
-    { interfacesValue = value
-    }
+  list <- some getNamedType
+  case nonEmpty list of
+    Nothing -> fail "impossible"
+    Just value -> pure Interfaces
+      { interfacesValue = value
+      }
 
 
 getFieldDefinitions :: Parser FieldDefinitions

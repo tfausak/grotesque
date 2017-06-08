@@ -227,9 +227,8 @@ genObjectTypeDefinition = ObjectTypeDefinition
   <*> genFieldDefinitions
 
 
--- TODO: make interfaces non-empty
 genInterfaces :: Gen IO Interfaces
-genInterfaces = Interfaces <$> G.list (R.linear 1 2) genNamedType
+genInterfaces = Interfaces <$> G.nonEmpty (R.linear 1 2) genNamedType
 
 
 genFieldDefinitions :: Gen IO FieldDefinitions

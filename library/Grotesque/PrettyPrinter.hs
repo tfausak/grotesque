@@ -292,9 +292,8 @@ prettyObjectTypeDefinition x = sep (catMaybes
 
 
 prettyInterfaces :: Interfaces -> Doc ()
-prettyInterfaces x = case interfacesValue x of
-  [] -> mempty
-  y -> sep (pretty "implements" : map prettyNamedType y)
+prettyInterfaces x =
+  sep (pretty "implements" : map prettyNamedType (toList (interfacesValue x)))
 
 
 prettyFieldDefinitions :: FieldDefinitions -> Doc ()
