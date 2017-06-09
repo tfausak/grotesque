@@ -270,7 +270,14 @@ genInterfaceTypeDefinition = InterfaceTypeDefinition
 
 
 genUnionTypeDefinition :: Gen IO UnionTypeDefinition
-genUnionTypeDefinition = G.discard -- TODO
+genUnionTypeDefinition = UnionTypeDefinition
+  <$> genName
+  <*> G.maybe genDirectives
+  <*> genUnionTypes
+
+
+genUnionTypes :: Gen IO UnionTypes
+genUnionTypes = UnionTypes <$> G.nonEmpty (R.linear 1 2) genNamedType
 
 
 genEnumTypeDefinition :: Gen IO EnumTypeDefinition

@@ -17,6 +17,7 @@ getDocument :: Parser Document
 getDocument = do
   _ <- getSpace
   value <- many getDefinition
+  eof
   pure Document
     { documentValue = value
     }
@@ -741,7 +742,27 @@ getInterfaceTypeDefinition = do
 
 
 getUnionTypeDefinition :: Parser UnionTypeDefinition
-getUnionTypeDefinition = fail "" -- TODO
+getUnionTypeDefinition = do
+  _ <- getSymbol "union"
+  name <- getName
+  directives <- optional getDirectives
+  _ <- getSymbol "="
+  types <- getUnionTypes
+  pure UnionTypeDefinition
+    { unionTypeDefinitionName = name
+    , unionTypeDefinitionDirectives = directives
+    , unionTypeDefinitionTypes = types
+    }
+
+
+getUnionTypes :: Parser UnionTypes
+getUnionTypes = do
+  list <- sepBy1 getNamedType (getSymbol "|")
+  case nonEmpty list of
+    Nothing -> fail "impossible"
+    Just value -> pure UnionTypes
+      { unionTypesValue = value
+      }
 
 
 getEnumTypeDefinition :: Parser EnumTypeDefinition

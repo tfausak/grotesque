@@ -299,7 +299,12 @@ data InterfaceTypeDefinition = InterfaceTypeDefinition
 data UnionTypeDefinition = UnionTypeDefinition
   { unionTypeDefinitionName :: Name
   , unionTypeDefinitionDirectives :: Maybe Directives
-  , unionTypeDefinitionTypes :: [NamedType]
+  , unionTypeDefinitionTypes :: UnionTypes
+  } deriving (Eq, Show)
+
+
+newtype UnionTypes = UnionTypes
+  { unionTypesValue :: NonEmpty NamedType
   } deriving (Eq, Show)
 
 

@@ -352,7 +352,18 @@ prettyInterfaceTypeDefinition x = sep (catMaybes
 
 
 prettyUnionTypeDefinition :: UnionTypeDefinition -> Doc ()
-prettyUnionTypeDefinition _ = mempty -- TODO
+prettyUnionTypeDefinition x = sep (catMaybes
+  [ Just (pretty "union")
+  , Just (prettyName (unionTypeDefinitionName x))
+  , fmap prettyDirectives (unionTypeDefinitionDirectives x)
+  , Just (pretty "=")
+  , Just (prettyUnionTypes (unionTypeDefinitionTypes x))
+  ])
+
+
+prettyUnionTypes :: UnionTypes -> Doc ()
+prettyUnionTypes x = encloseSep mempty mempty (space <> pretty "|" <> space)
+  (map prettyNamedType (toList (unionTypesValue x)))
 
 
 prettyEnumTypeDefinition :: EnumTypeDefinition -> Doc ()

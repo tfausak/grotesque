@@ -281,6 +281,18 @@ main = do
         " interface i { f : t } "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Nothing, interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), fieldDefinitionDirectives = Nothing}]}})))]}
 
+      itParses "a union type definition"
+        " union u = t "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Nothing, unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}]}})))]}
+
+      itParses "a union type definition with a directive"
+        " union u @ d = t "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}]}})))]}
+
+      itParses "a union type definition with multiple types"
+        " union u = t | s "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Nothing, unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}, NamedType {namedTypeValue = Name {nameValue = "s"}}]}})))]}
+
     context "pretty printer" $ do
 
       itPrettyPrints "an empty document"
@@ -490,6 +502,18 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
       itPrettyPrints "an interface type definition with a field definition"
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Nothing, interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), fieldDefinitionDirectives = Nothing}]}})))]}
         "interface i {f: t}"
+
+      itPrettyPrints "a union type definition"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Nothing, unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}]}})))]}
+        "union u = t"
+
+      itPrettyPrints "a union type definition with a directive"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}]}})))]}
+        "union u @d = t"
+
+      itPrettyPrints "a union type definition with multiple types"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Nothing, unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}, NamedType {namedTypeValue = Name {nameValue = "s"}}]}})))]}
+        "union u = t | s"
 
   _ <- checkParallel $$(discover)
   pure ()
