@@ -95,8 +95,7 @@ genValue = G.choice
   [ ValueVariable <$> genVariable
   , ValueInt <$> G.integral (R.linearFrom 0 (-1e9) 1e9)
   , ValueFloat . fromFloatDigits <$> G.double (R.linearFracFrom 0 (-1e9) 1e9)
-  -- TODO: handle unicode
-  , ValueString <$> G.text (R.linear 0 8) G.ascii
+  , ValueString <$> G.text (R.linear 0 8) G.unicode
   , ValueBoolean <$> G.bool
   , pure ValueNull
   , ValueEnum <$> genName

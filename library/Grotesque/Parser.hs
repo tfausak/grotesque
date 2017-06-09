@@ -1,5 +1,6 @@
 module Grotesque.Parser where
 
+import Data.Bits (shiftL, (.&.))
 import Data.List.NonEmpty (nonEmpty)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
@@ -407,6 +408,7 @@ getQuote = char '"'
 getCharacter :: Parser Char
 getCharacter = choice
   [ getStringCharacter
+  , try getSurrogateCharacter
   , try getUnicodeCharacter
   , getEscapedCharacter
   ]
@@ -421,14 +423,34 @@ getStringCharacter = oneOf (concat
   ])
 
 
+getSurrogateCharacter :: Parser Char
+getSurrogateCharacter = do
+  hd <- getUnicodeEscape
+  ld <- getUnicodeEscape
+  case readMaybe ("(0x" ++ hd ++ ", 0x" ++ ld ++ ")") of
+    Nothing -> fail "impossible"
+    Just (h, l) -> if h < 0xd800 || h > 0xdbff || l < 0xdc00 || l > 0xdfff
+      then fail "invalid surrogate"
+      else let
+        n = 0x010000 + (shiftL (h .&. 0x0003ff) 10) + (l .&. 0x0003ff)
+        in if n <= fromEnum (maxBound :: Char)
+          then pure (toEnum n)
+          else fail "impossible"
+
+
 getUnicodeCharacter :: Parser Char
 getUnicodeCharacter = do
-  _ <- getBackslash
-  _ <- char 'u'
-  digits <- count 4 hexDigitChar
+  digits <- getUnicodeEscape
   case readMaybe ("\'\\x" ++ digits ++ "\'") of
     Nothing -> fail "impossible"
     Just character -> pure character
+
+
+getUnicodeEscape :: Parser String
+getUnicodeEscape = do
+  _ <- getBackslash
+  _ <- char 'u'
+  count 4 hexDigitChar
 
 
 getEscapedCharacter :: Parser Char

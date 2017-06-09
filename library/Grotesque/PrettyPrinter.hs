@@ -1,5 +1,6 @@
 module Grotesque.PrettyPrinter where
 
+import Data.Bits (shiftR, (.&.), (.|.))
 import Data.List.NonEmpty (toList)
 import Data.Maybe (catMaybes)
 import Data.Scientific (Scientific)
@@ -157,15 +158,23 @@ prettyFloat x = pretty (Builder.toLazyText (scientificBuilder x))
 
 prettyString :: Text -> Doc ()
 prettyString x = let
+  isAsciiPrintable c = c >= ' ' && c <= '~'
+  isBmp c = c <= '\xffff'
+  surrogatePair c = let
+    n = fromEnum c - 0x010000
+    h = 0x00d800 .|. (shiftR n 10)
+    l = 0x00dc00 .|. (n .&. 0x0003ff)
+    in (h, l)
   charBuilder c = case c of
     '"' -> Builder.fromString "\\\""
     '\\' -> Builder.fromString "\\\\"
-    _ -> if c < ' ' || c > '~'
-      -- TODO: This prints characters higher than U+FFFF as a single escaped
-      -- character with more than 4 digits. Since the escape needs to be
-      -- exactly 4 digits, big characters should be broken up.
-      then Builder.fromString ('\\' : 'u' : printf "%04x" (fromEnum c))
-      else Builder.fromString [c]
+    _ -> if isAsciiPrintable c
+      then Builder.fromString [c]
+      else if isBmp c
+        then Builder.fromString (printf "\\u%04x" (fromEnum c))
+        else let
+          (h, l) = surrogatePair c
+          in Builder.fromString (printf "\\u%04x\\u%04x" h l)
   in dquotes (pretty (Builder.toLazyText
     (Text.foldl' (\b c -> b <> charBuilder c) mempty x)))
 
