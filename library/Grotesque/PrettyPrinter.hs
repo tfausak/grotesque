@@ -334,7 +334,12 @@ prettyInputValueDefinition x = sep (catMaybes
 
 
 prettyInterfaceTypeDefinition :: InterfaceTypeDefinition -> Doc ()
-prettyInterfaceTypeDefinition _ = mempty -- TODO
+prettyInterfaceTypeDefinition x = sep (catMaybes
+  [ Just (pretty "interface")
+  , Just (prettyName (interfaceTypeDefinitionName x))
+  , fmap prettyDirectives (interfaceTypeDefinitionDirectives x)
+  , Just (prettyFieldDefinitions (interfaceTypeDefinitionFields x))
+  ])
 
 
 prettyUnionTypeDefinition :: UnionTypeDefinition -> Doc ()

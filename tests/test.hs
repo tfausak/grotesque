@@ -246,7 +246,7 @@ main = do
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
 
       itParses "an object type definition with a field definition"
-        " type t { f: s } "
+        " type t { f : s } "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Nothing}]}})))]}
 
       itParses "an object type definition with a field definition with empty arguments"
@@ -268,6 +268,18 @@ main = do
       itParses "an object type definition with a field definition with a directive"
         " type t { f : s @ d } "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})}]}})))]}
+
+      itParses "an interface type definition"
+        " interface i { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Nothing, interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+
+      itParses "an interface type definition with a directive"
+        " interface i @ d { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+
+      itParses "an interface type definition with a field definition"
+        " interface i { f : t } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Nothing, interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), fieldDefinitionDirectives = Nothing}]}})))]}
 
     context "pretty printer" $ do
 
@@ -467,6 +479,18 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionObject (ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "s"}}), fieldDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})}]}})))]}
         "type t {f: s @d}"
 
+      itPrettyPrints "an interface type definition"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Nothing, interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+        "interface i {}"
+
+      itPrettyPrints "an interface type definition with a directive"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}})))]}
+        "interface i @d {}"
+
+      itPrettyPrints "an interface type definition with a field definition"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInterface (InterfaceTypeDefinition {interfaceTypeDefinitionName = Name {nameValue = "i"}, interfaceTypeDefinitionDirectives = Nothing, interfaceTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = [FieldDefinition {fieldDefinitionName = Name {nameValue = "f"}, fieldDefinitionArguments = Nothing, fieldDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), fieldDefinitionDirectives = Nothing}]}})))]}
+        "interface i {f: t}"
+
   _ <- checkParallel $$(discover)
   pure ()
 
@@ -492,6 +516,6 @@ prettyPrintDocument = renderStrict . layoutPretty (LayoutOptions Unbounded) . pr
 
 
 prop_round_trip :: Property
-prop_round_trip = property $ do
+prop_round_trip = withTests 1000 . property $ do
   document <- forAll genDocument
   tripping document prettyPrintDocument parseDocument

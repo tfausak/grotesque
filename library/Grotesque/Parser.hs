@@ -706,7 +706,16 @@ getInputValueDefinition = do
 
 
 getInterfaceTypeDefinition :: Parser InterfaceTypeDefinition
-getInterfaceTypeDefinition = fail "" -- TODO
+getInterfaceTypeDefinition = do
+  _ <- getSymbol "interface"
+  name <- getName
+  directives <- optional getDirectives
+  fieldDefinitions <- getFieldDefinitions
+  pure InterfaceTypeDefinition
+    { interfaceTypeDefinitionName = name
+    , interfaceTypeDefinitionDirectives = directives
+    , interfaceTypeDefinitionFields = fieldDefinitions
+    }
 
 
 getUnionTypeDefinition :: Parser UnionTypeDefinition

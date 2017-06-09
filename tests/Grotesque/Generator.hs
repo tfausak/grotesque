@@ -264,7 +264,10 @@ genInputValueDefinition = InputValueDefinition
 
 
 genInterfaceTypeDefinition :: Gen IO InterfaceTypeDefinition
-genInterfaceTypeDefinition = G.discard -- TODO
+genInterfaceTypeDefinition = InterfaceTypeDefinition
+  <$> genName
+  <*> G.maybe genDirectives
+  <*> genFieldDefinitions
 
 
 genUnionTypeDefinition :: Gen IO UnionTypeDefinition

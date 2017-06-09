@@ -292,7 +292,7 @@ data InputValueDefinition = InputValueDefinition
 data InterfaceTypeDefinition = InterfaceTypeDefinition
   { interfaceTypeDefinitionName :: Name
   , interfaceTypeDefinitionDirectives :: Maybe Directives
-  , interfaceTypeDefinitionField :: [FieldDefinition]
+  , interfaceTypeDefinitionFields :: FieldDefinitions
   } deriving (Eq, Show)
 
 
