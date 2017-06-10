@@ -402,7 +402,10 @@ prettyInputFieldDefinitions x =
 
 
 prettyTypeExtensionDefinition :: TypeExtensionDefinition -> Doc ()
-prettyTypeExtensionDefinition _ = mempty -- TODO
+prettyTypeExtensionDefinition x = sep
+  [ pretty "extend"
+  , prettyObjectTypeDefinition (typeExtensionDefinitionValue x)
+  ]
 
 
 prettyDirectiveDefinition :: DirectiveDefinition -> Doc ()

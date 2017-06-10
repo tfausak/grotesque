@@ -309,7 +309,7 @@ genInputFieldDefinitions = InputFieldDefinitions <$> G.list (R.linear 0 2) genIn
 
 
 genTypeExtensionDefinition :: Gen IO TypeExtensionDefinition
-genTypeExtensionDefinition = G.discard -- TODO
+genTypeExtensionDefinition = TypeExtensionDefinition <$> genObjectTypeDefinition
 
 
 genDirectiveDefinition :: Gen IO DirectiveDefinition

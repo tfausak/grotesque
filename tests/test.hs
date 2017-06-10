@@ -317,6 +317,10 @@ main = do
         " input i { f : t } "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Nothing, inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "f"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Nothing}]}})))]}
 
+      itParses "a type extension"
+        " extend type t { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionTypeExtension (TypeExtensionDefinition {typeExtensionDefinitionValue = ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}}}))]}
+
     context "pretty printer" $ do
 
       itPrettyPrints "an empty document"
@@ -562,6 +566,10 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
       itPrettyPrints "an input type with a field"
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Nothing, inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "f"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Nothing}]}})))]}
         "input i {f: t}"
+
+      itPrettyPrints "a type extension"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionTypeExtension (TypeExtensionDefinition {typeExtensionDefinitionValue = ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}}}))]}
+        "extend type t {}"
 
   _ <- checkParallel $$(discover)
   pure ()

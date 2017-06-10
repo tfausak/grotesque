@@ -818,7 +818,12 @@ getInputFieldDefinitions = getInBraces (do
 
 
 getTypeExtensionDefinition :: Parser TypeExtensionDefinition
-getTypeExtensionDefinition = fail "" -- TODO
+getTypeExtensionDefinition = do
+  _ <- getSymbol "extend"
+  value <- getObjectTypeDefinition
+  pure TypeExtensionDefinition
+    { typeExtensionDefinitionValue = value
+    }
 
 
 getDirectiveDefinition :: Parser DirectiveDefinition
