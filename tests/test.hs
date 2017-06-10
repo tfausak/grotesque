@@ -293,6 +293,18 @@ main = do
         " union u = t | s "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Nothing, unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}, NamedType {namedTypeValue = Name {nameValue = "s"}}]}})))]}
 
+      itParses "an enum type"
+        " enum e { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Nothing, enumTypeDefinitionValues = EnumValues {enumValuesValue = []}})))]}
+
+      itParses "an enum type with a directive"
+        " enum e @ d { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), enumTypeDefinitionValues = EnumValues {enumValuesValue = []}})))]}
+
+      itParses "an enum type with some values"
+        " enum e { t @ d s } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Nothing, enumTypeDefinitionValues = EnumValues {enumValuesValue = [EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "t"}, enumValueDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})},EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "s"}, enumValueDefinitionDirectives = Nothing}]}})))]}
+
     context "pretty printer" $ do
 
       itPrettyPrints "an empty document"
@@ -514,6 +526,18 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
       itPrettyPrints "a union type definition with multiple types"
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionUnion (UnionTypeDefinition {unionTypeDefinitionName = Name {nameValue = "u"}, unionTypeDefinitionDirectives = Nothing, unionTypeDefinitionTypes = UnionTypes {unionTypesValue = [NamedType {namedTypeValue = Name {nameValue = "t"}}, NamedType {namedTypeValue = Name {nameValue = "s"}}]}})))]}
         "union u = t | s"
+
+      itPrettyPrints "an enum type"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Nothing, enumTypeDefinitionValues = EnumValues {enumValuesValue = []}})))]}
+        "enum e {}"
+
+      itPrettyPrints "an enum type with a directive"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), enumTypeDefinitionValues = EnumValues {enumValuesValue = []}})))]}
+        "enum e @d {}"
+
+      itPrettyPrints "an enum type with some values"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Nothing, enumTypeDefinitionValues = EnumValues {enumValuesValue = [EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "t"}, enumValueDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})},EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "s"}, enumValueDefinitionDirectives = Nothing}]}})))]}
+        "enum e {t @d s}"
 
   _ <- checkParallel $$(discover)
   pure ()

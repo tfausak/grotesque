@@ -766,7 +766,34 @@ getUnionTypes = do
 
 
 getEnumTypeDefinition :: Parser EnumTypeDefinition
-getEnumTypeDefinition = fail "" -- TODO
+getEnumTypeDefinition = do
+  _ <- getSymbol "enum"
+  name <- getName
+  directives <- optional getDirectives
+  values <- getEnumValues
+  pure EnumTypeDefinition
+    { enumTypeDefinitionName = name
+    , enumTypeDefinitionDirectives = directives
+    , enumTypeDefinitionValues = values
+    }
+
+
+getEnumValues :: Parser EnumValues
+getEnumValues = getInBraces (do
+  value <- many getEnumValueDefinition
+  pure EnumValues
+    { enumValuesValue = value
+    })
+
+
+getEnumValueDefinition :: Parser EnumValueDefinition
+getEnumValueDefinition = do
+  name <- getName
+  directives <- optional getDirectives
+  pure EnumValueDefinition
+    { enumValueDefinitionName = name
+    , enumValueDefinitionDirectives = directives
+    }
 
 
 getInputObjectTypeDefinition :: Parser InputObjectTypeDefinition

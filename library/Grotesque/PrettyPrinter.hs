@@ -367,7 +367,24 @@ prettyUnionTypes x = encloseSep mempty mempty (space <> pretty "|" <> space)
 
 
 prettyEnumTypeDefinition :: EnumTypeDefinition -> Doc ()
-prettyEnumTypeDefinition _ = mempty -- TODO
+prettyEnumTypeDefinition x = sep (catMaybes
+  [ Just (pretty "enum")
+  , Just (prettyName (enumTypeDefinitionName x))
+  , fmap prettyDirectives (enumTypeDefinitionDirectives x)
+  , Just (prettyEnumValues (enumTypeDefinitionValues x))
+  ])
+
+
+prettyEnumValues :: EnumValues -> Doc ()
+prettyEnumValues x =
+  braces (sep (map prettyEnumValueDefinition (enumValuesValue x)))
+
+
+prettyEnumValueDefinition :: EnumValueDefinition -> Doc ()
+prettyEnumValueDefinition x = sep (catMaybes
+  [ Just (prettyName (enumValueDefinitionName x))
+  , fmap prettyDirectives (enumValueDefinitionDirectives x)
+  ])
 
 
 prettyInputObjectTypeDefinition :: InputObjectTypeDefinition -> Doc ()

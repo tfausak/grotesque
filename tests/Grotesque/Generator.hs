@@ -281,7 +281,20 @@ genUnionTypes = UnionTypes <$> G.nonEmpty (R.linear 1 2) genNamedType
 
 
 genEnumTypeDefinition :: Gen IO EnumTypeDefinition
-genEnumTypeDefinition = G.discard -- TODO
+genEnumTypeDefinition = EnumTypeDefinition
+  <$> genName
+  <*> G.maybe genDirectives
+  <*> genEnumValues
+
+
+genEnumValues :: Gen IO EnumValues
+genEnumValues = EnumValues <$> G.list (R.linear 0 2) genEnumValueDefinition
+
+
+genEnumValueDefinition :: Gen IO EnumValueDefinition
+genEnumValueDefinition = EnumValueDefinition
+  <$> genName
+  <*> G.maybe genDirectives
 
 
 genInputObjectTypeDefinition :: Gen IO InputObjectTypeDefinition

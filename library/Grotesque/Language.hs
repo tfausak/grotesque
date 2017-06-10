@@ -311,7 +311,12 @@ newtype UnionTypes = UnionTypes
 data EnumTypeDefinition = EnumTypeDefinition
   { enumTypeDefinitionName :: Name
   , enumTypeDefinitionDirectives :: Maybe Directives
-  , enumTypeDefinitionValues :: [EnumValueDefinition]
+  , enumTypeDefinitionValues :: EnumValues
+  } deriving (Eq, Show)
+
+
+newtype EnumValues = EnumValues
+  { enumValuesValue :: [EnumValueDefinition]
   } deriving (Eq, Show)
 
 
