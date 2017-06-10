@@ -2,10 +2,12 @@ module Grotesque.Parser where
 
 import Grotesque.Language
 
+import Data.List.NonEmpty (NonEmpty)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Text.Megaparsec.Text (Parser)
 
+import qualified Control.Monad as Monad
 import qualified Data.Bits as Bits
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
@@ -15,60 +17,45 @@ import qualified Text.Read as Read
 
 
 getDocument :: Parser Document
-getDocument = do
-  _ <- getSpace
-  value <- M.many getDefinition
-  M.eof
-  pure Document
-    { documentValue = value
-    }
+getDocument = Document
+  <$> (getSpace *> M.many getDefinition <* M.eof)
 
 
 getDefinition :: Parser Definition
 getDefinition = M.choice
-  [ fmap DefinitionOperation getOperationDefinition
-  , fmap DefinitionFragment getFragmentDefinition
-  , fmap DefinitionTypeSystem getTypeSystemDefinition
+  [ DefinitionOperation <$> getOperationDefinition
+  , DefinitionFragment <$> getFragmentDefinition
+  , DefinitionTypeSystem <$> getTypeSystemDefinition
   ]
 
 
 getOperationDefinition :: Parser OperationDefinition
 getOperationDefinition = M.choice
-  [ getLongOperationDefinition
+  [ M.try getLongOperationDefinition
   , getShortOperationDefinition
   ]
 
 
 getLongOperationDefinition :: Parser OperationDefinition
-getLongOperationDefinition = do
-  operationType <- getOperationType
-  name <- M.optional (M.try getName)
-  variableDefinitions <- M.optional (M.try getVariableDefinitions)
-  directives <- M.optional (M.try getDirectives)
-  selectionSet <- getSelectionSet
-  pure OperationDefinition
-    { operationDefinitionOperationType = operationType
-    , operationDefinitionName = name
-    , operationDefinitionVariableDefinitions = variableDefinitions
-    , operationDefinitionDirectives = directives
-    , operationDefinitionSelectionSet = selectionSet
-    }
+getLongOperationDefinition = OperationDefinition
+  <$> getOperationType
+  <*> M.optional (M.try getName)
+  <*> M.optional (M.try getVariableDefinitions)
+  <*> M.optional (M.try getDirectives)
+  <*> getSelectionSet
 
 
 getOperationType :: Parser OperationType
 getOperationType = M.choice
-  [ fmap (const OperationTypeQuery) (getSymbol "query")
-  , fmap (const OperationTypeMutation) (getSymbol "mutation")
-  , fmap (const OperationTypeSubscription) (getSymbol "subscription")
+  [ getSymbol "query" *> pure OperationTypeQuery
+  , getSymbol "mutation" *> pure OperationTypeMutation
+  , getSymbol "subscription" *> pure OperationTypeSubscription
   ]
 
 
 getVariableDefinitions :: Parser VariableDefinitions
-getVariableDefinitions = getInParentheses (do
-  value <- M.many getVariableDefinition
-  pure VariableDefinitions
-    { variableDefinitionsValue = value
-    })
+getVariableDefinitions = getInParentheses $ VariableDefinitions
+  <$> M.many getVariableDefinition
 
 
 getInParentheses :: Parser a -> Parser a
@@ -76,40 +63,28 @@ getInParentheses = M.between (getSymbol "(") (getSymbol ")")
 
 
 getVariableDefinition :: Parser VariableDefinition
-getVariableDefinition = do
-  variable <- getVariable
-  _ <- getColon
-  type_ <- getType
-  defaultValue <- M.optional getDefaultValue
-  pure VariableDefinition
-    { variableDefinitionVariable = variable
-    , variableDefinitionType = type_
-    , variableDefinitionDefaultValue = defaultValue
-    }
+getVariableDefinition = VariableDefinition
+  <$> (getVariable <* getColon)
+  <*> getType
+  <*> M.optional getDefaultValue
 
 
 getType :: Parser Type
 getType = M.choice
-  [ fmap TypeNonNull (M.try getNonNullType)
-  , fmap TypeNamed getNamedType
-  , fmap TypeList getListType
+  [ TypeNonNull <$> M.try getNonNullType
+  , TypeNamed <$> getNamedType
+  , TypeList <$> getListType
   ]
 
 
 getNamedType :: Parser NamedType
-getNamedType = do
-  value <- getName
-  pure NamedType
-    { namedTypeValue = value
-    }
+getNamedType = NamedType
+  <$> getName
 
 
 getListType :: Parser ListType
-getListType = getInBrackets (do
-  value <- getType
-  pure ListType
-    { listTypeValue = value
-    })
+getListType = getInBrackets $ ListType
+  <$> getType
 
 
 getInBrackets :: Parser a -> Parser a
@@ -117,17 +92,15 @@ getInBrackets = M.between (getSymbol "[") (getSymbol "]")
 
 
 getNonNullType :: Parser NonNullType
-getNonNullType = getLexeme (M.choice
+getNonNullType = getLexeme $ M.choice
   [ getNonNullNamedType
   , getNonNullListType
-  ])
+  ]
 
 
 getNonNullNamedType :: Parser NonNullType
-getNonNullNamedType = do
-  value <- getNamedType
-  _ <- getExclamationPoint
-  pure (NonNullTypeNamed value)
+getNonNullNamedType = NonNullTypeNamed
+  <$> (getNamedType <* getExclamationPoint)
 
 
 getExclamationPoint :: Parser Char
@@ -135,60 +108,46 @@ getExclamationPoint = M.char '!'
 
 
 getNonNullListType :: Parser NonNullType
-getNonNullListType = do
-  value <- getListType
-  _ <- getExclamationPoint
-  pure (NonNullTypeList value)
+getNonNullListType = NonNullTypeList
+  <$> (getListType <* getExclamationPoint)
 
 
 getDefaultValue :: Parser DefaultValue
-getDefaultValue = do
-  _ <- getSymbol "="
-  value <- getValue
-  pure DefaultValue
-    { defaultValueValue = value
-    }
+getDefaultValue = DefaultValue
+  <$> (getSymbol "=" *> getValue)
 
 
 getDirectives :: Parser Directives
-getDirectives = do
-  list <- M.some getDirective
+getDirectives = Directives
+  <$> getNonEmpty getDirective
+
+
+getNonEmpty :: Parser a -> Parser (NonEmpty a)
+getNonEmpty x = do
+  list <- M.some x
   case NonEmpty.nonEmpty list of
-    Nothing -> fail "impossible"
-    Just value -> pure Directives
-      { directivesValue = value
-      }
+    Nothing -> fail "getNonEmpty: impossible"
+    Just value -> pure value
 
 
 getDirective :: Parser Directive
-getDirective = do
-  _ <- getSymbol "@"
-  name <- getName
-  arguments <- M.optional getArguments
-  pure Directive
-    { directiveName = name
-    , directiveArguments = arguments
-    }
+getDirective = Directive
+  <$> (getSymbol "@" *> getName)
+  <*> M.optional getArguments
 
 
 getShortOperationDefinition :: Parser OperationDefinition
-getShortOperationDefinition = do
-  selectionSet <- getSelectionSet
-  pure OperationDefinition
-    { operationDefinitionOperationType = OperationTypeQuery
-    , operationDefinitionName = Nothing
-    , operationDefinitionVariableDefinitions = Nothing
-    , operationDefinitionDirectives = Nothing
-    , operationDefinitionSelectionSet = selectionSet
-    }
+getShortOperationDefinition = OperationDefinition
+  <$> pure OperationTypeQuery
+  <*> pure Nothing
+  <*> pure Nothing
+  <*> pure Nothing
+  <*> getSelectionSet
 
 
 getSelectionSet :: Parser SelectionSet
-getSelectionSet = getInBraces (do
-  value <- M.many getSelection
-  pure SelectionSet
-    { selectionSetValue = value
-    })
+getSelectionSet = getInBraces $ SelectionSet
+  <$> M.many getSelection
 
 
 getInBraces :: Parser a -> Parser a
@@ -197,41 +156,31 @@ getInBraces = M.between (getSymbol "{") (getSymbol "}")
 
 getSelection :: Parser Selection
 getSelection = M.choice
-  [ fmap SelectionField getField
-  , fmap SelectionFragmentSpread (M.try getFragmentSpread)
-  , fmap SelectionInlineFragment getInlineFragment
+  [ SelectionField <$> getField
+  , SelectionFragmentSpread <$> M.try getFragmentSpread
+  , SelectionInlineFragment <$> getInlineFragment
   ]
 
 
 getField :: Parser Field
-getField = do
-  alias <- M.optional (M.try getAlias)
-  name <- getName
-  arguments <- M.optional (M.try getArguments)
-  directives <- M.optional (M.try getDirectives)
-  selectionSet <- M.optional (M.try getSelectionSet)
-  pure Field
-    { fieldAlias = alias
-    , fieldName = name
-    , fieldArguments = arguments
-    , fieldDirectives = directives
-    , fieldSelectionSet = selectionSet
-    }
+getField = Field
+  <$> M.optional (M.try getAlias)
+  <*> getName
+  <*> M.optional (M.try getArguments)
+  <*> M.optional (M.try getDirectives)
+  <*> M.optional (M.try getSelectionSet)
 
 
 getAlias :: Parser Alias
-getAlias = do
-  value <- getName
-  _ <- getColon
-  pure Alias
-    { aliasValue = value
-    }
+getAlias = Alias
+  <$> (getName <* getColon)
 
 
 getColon :: Parser String
 getColon = getSymbol ":"
 
 
+-- TODO
 getName :: Parser Name
 getName = getLexeme (do
   let
@@ -247,52 +196,41 @@ getName = getLexeme (do
 
 
 getArguments :: Parser Arguments
-getArguments = getInParentheses (do
-  value <- M.many getArgument
-  pure Arguments
-    { argumentsValue = value
-    })
+getArguments = getInParentheses $ Arguments
+  <$> M.many getArgument
 
 
 getArgument :: Parser Argument
-getArgument = do
-  name <- getName
-  _ <- getColon
-  value <- getValue
-  pure Argument
-    { argumentName = name
-    , argumentValue = value
-    }
+getArgument = Argument
+  <$> (getName <* getColon)
+  <*> getValue
 
 
 getValue :: Parser Value
 getValue = M.choice
-  [ fmap ValueVariable getVariable
-  , fmap ValueFloat (M.try getFloat)
-  , fmap ValueInt getInt
-  , fmap ValueString getString
-  , fmap ValueBoolean getBoolean
-  , fmap (const ValueNull) getNull
-  , fmap ValueEnum getEnum
-  , fmap ValueList getList
-  , fmap ValueObject getObject
+  [ ValueVariable <$> getVariable
+  , ValueFloat <$> M.try getFloat
+  , ValueInt <$> getInt
+  , ValueString <$> getString
+  , ValueBoolean <$> getBoolean
+  , getNull *> pure ValueNull
+  , ValueEnum <$> getEnum
+  , ValueList <$> getList
+  , ValueObject <$> getObject
   ]
 
 
 getVariable :: Parser Variable
-getVariable = do
-  _ <- getSymbol "$"
-  value <- getName
-  pure Variable
-    { variableValue = value
-    }
+getVariable = Variable
+  <$> (getSymbol "$" *> getName)
 
 
+-- TODO
 getInt :: Parser Integer
 getInt = getLexeme (do
   integerPart <- getIntegerPart
   case Read.readMaybe integerPart of
-    Nothing -> fail "impossible"
+    Nothing -> fail "getInt: impossible"
     Just int -> pure int)
 
 
@@ -303,6 +241,7 @@ getIntegerPart = M.choice
   ]
 
 
+-- TODO
 getZero :: Parser String
 getZero = do
   maybeNegativeSign <- M.optional getNegativeSign
@@ -316,6 +255,7 @@ getNegativeSign :: Parser Char
 getNegativeSign = M.char '-'
 
 
+-- TODO
 getNonZero :: Parser String
 getNonZero = do
   maybeNegativeSign <- M.optional getNegativeSign
@@ -331,13 +271,14 @@ getNonZeroDigit = M.oneOf ['1' .. '9']
 
 
 getFloat :: Parser Scientific
-getFloat = getLexeme (M.choice
+getFloat = getLexeme $ M.choice
   [ M.try getFractionalExponentFloat
   , M.try getFractionalFloat
   , getExponentFloat
-  ])
+  ]
 
 
+-- TODO
 getFractionalFloat :: Parser Scientific
 getFractionalFloat = do
   integerPart <- getIntegerPart
@@ -348,16 +289,16 @@ getFractionalFloat = do
 
 
 getFractionalPart :: Parser String
-getFractionalPart = do
-  decimalPoint <- getDecimalPoint
-  digits <- M.some M.digitChar
-  pure (decimalPoint : digits)
+getFractionalPart = (:)
+  <$> getDecimalPoint
+  <*> M.some M.digitChar
 
 
 getDecimalPoint :: Parser Char
 getDecimalPoint = M.char '.'
 
 
+-- TODO
 getExponentFloat :: Parser Scientific
 getExponentFloat = do
   integerPart <- getIntegerPart
@@ -367,6 +308,7 @@ getExponentFloat = do
     Just float -> pure float
 
 
+-- TODO
 getExponentPart :: Parser String
 getExponentPart = do
   exponentIndicator <- getExponentIndicator
@@ -385,6 +327,7 @@ getSign :: Parser Char
 getSign = M.oneOf ['+', '-']
 
 
+-- TODO
 getFractionalExponentFloat :: Parser Scientific
 getFractionalExponentFloat = do
   integerPart <- getIntegerPart
@@ -396,11 +339,8 @@ getFractionalExponentFloat = do
 
 
 getString :: Parser Text
-getString = getLexeme (do
-  _ <- getQuote
-  characters <- M.many getCharacter
-  _ <- getQuote
-  pure (Text.pack characters))
+getString = getLexeme $ Text.pack
+  <$> (getQuote *> M.many getCharacter <* getQuote)
 
 
 getQuote :: Parser Char
@@ -417,14 +357,15 @@ getCharacter = M.choice
 
 
 getStringCharacter :: Parser Char
-getStringCharacter = M.oneOf (concat
+getStringCharacter = M.oneOf $ concat
   [ ['\x0009']
   , ['\x0020' .. '\x0021']
   , ['\x0023' .. '\x005b']
   , ['\x005d' .. '\xffff']
-  ])
+  ]
 
 
+-- TODO
 getSurrogateCharacter :: Parser Char
 getSurrogateCharacter = do
   hd <- getUnicodeEscape
@@ -440,6 +381,7 @@ getSurrogateCharacter = do
           else fail "impossible"
 
 
+-- TODO
 getUnicodeCharacter :: Parser Char
 getUnicodeCharacter = do
   digits <- getUnicodeEscape
@@ -449,12 +391,10 @@ getUnicodeCharacter = do
 
 
 getUnicodeEscape :: Parser String
-getUnicodeEscape = do
-  _ <- getBackslash
-  _ <- M.char 'u'
-  M.count 4 M.hexDigitChar
+getUnicodeEscape = getBackslash *> M.char 'u' *> M.count 4 M.hexDigitChar
 
 
+-- TODO
 getEscapedCharacter :: Parser Char
 getEscapedCharacter = do
   _ <- getBackslash
@@ -477,8 +417,8 @@ getBackslash = M.char '\\'
 
 getBoolean :: Parser Bool
 getBoolean = M.choice
-  [ fmap (const True) getTrue
-  , fmap (const False) getFalse
+  [ getTrue *> pure True
+  , getFalse *> pure False
   ]
 
 
@@ -499,39 +439,30 @@ getEnum = getName
 
 
 getList :: Parser [Value]
-getList = getInBrackets (M.many getValue)
+getList = getInBrackets $ M.many getValue
 
 
 getObject :: Parser [ObjectField]
-getObject = getInBraces (M.many getObjectField)
+getObject = getInBraces $ M.many getObjectField
 
 
 getObjectField :: Parser ObjectField
-getObjectField = do
-  name <- getName
-  _ <- getColon
-  value <- getValue
-  pure ObjectField
-    { objectFieldName = name
-    , objectFieldValue = value
-    }
+getObjectField = ObjectField
+  <$> (getName <* getColon)
+  <*> getValue
 
 
 getFragmentSpread :: Parser FragmentSpread
-getFragmentSpread = do
-  _ <- getEllipsis
-  name <- getFragmentName
-  directives <- M.optional getDirectives
-  pure FragmentSpread
-    { fragmentSpreadName = name
-    , fragmentSpreadDirectives = directives
-    }
+getFragmentSpread = FragmentSpread
+  <$> (getEllipsis *> getFragmentName)
+  <*> M.optional getDirectives
 
 
 getEllipsis :: Parser String
 getEllipsis = getSymbol "..."
 
 
+-- TODO
 getFragmentName :: Parser FragmentName
 getFragmentName = do
   value <- getName
@@ -543,25 +474,15 @@ getFragmentName = do
 
 
 getInlineFragment :: Parser InlineFragment
-getInlineFragment = do
-  _ <- getEllipsis
-  typeCondition <- M.optional getTypeCondition
-  directives <- M.optional getDirectives
-  selectionSet <- getSelectionSet
-  pure InlineFragment
-    { inlineFragmentTypeCondition = typeCondition
-    , inlineFragmentDirectives = directives
-    , inlineFragmentSelectionSet = selectionSet
-    }
+getInlineFragment = InlineFragment
+  <$> (getEllipsis *> M.optional getTypeCondition)
+  <*> M.optional getDirectives
+  <*> getSelectionSet
 
 
 getTypeCondition :: Parser TypeCondition
-getTypeCondition = do
-  _ <- getSymbol "on"
-  value <- getNamedType
-  pure TypeCondition
-    { typeConditionValue = value
-    }
+getTypeCondition = TypeCondition
+  <$> (getSymbol "on" *> getNamedType)
 
 
 getSymbol :: String -> Parser String
@@ -574,188 +495,116 @@ getLexeme = Lexer.lexeme getSpace
 
 getSpace :: Parser ()
 getSpace = Lexer.space
-  (do
-    _ <- M.oneOf ['\xfeff', '\x0009', '\x0020', '\x000a', '\x000d', ',']
-    pure ())
+  (Monad.void $ M.oneOf ['\xfeff', '\x0009', '\x0020', '\x000a', '\x000d', ','])
   (Lexer.skipLineComment "#")
   (fail "no block comments")
 
 
 getFragmentDefinition :: Parser FragmentDefinition
-getFragmentDefinition = do
-  _ <- getSymbol "fragment"
-  name <- getFragmentName
-  typeCondition <- getTypeCondition
-  directives <- M.optional getDirectives
-  selectionSet <- getSelectionSet
-  pure FragmentDefinition
-    { fragmentName = name
-    , fragmentTypeCondition = typeCondition
-    , fragmentDirectives = directives
-    , fragmentSelectionSet = selectionSet
-    }
+getFragmentDefinition = FragmentDefinition
+  <$> (getSymbol "fragment" *> getFragmentName)
+  <*> getTypeCondition
+  <*> M.optional getDirectives
+  <*> getSelectionSet
 
 
 getTypeSystemDefinition :: Parser TypeSystemDefinition
 getTypeSystemDefinition = M.choice
-  [ fmap TypeSystemDefinitionSchema getSchemaDefinition
-  , fmap TypeSystemDefinitionType getTypeDefinition
-  , fmap TypeSystemDefinitionTypeExtension getTypeExtensionDefinition
-  , fmap TypeSystemDefinitionDirective getDirectiveDefinition
+  [ TypeSystemDefinitionSchema <$> getSchemaDefinition
+  , TypeSystemDefinitionType <$> getTypeDefinition
+  , TypeSystemDefinitionTypeExtension <$> getTypeExtensionDefinition
+  , TypeSystemDefinitionDirective <$> getDirectiveDefinition
   ]
 
 
 getSchemaDefinition :: Parser SchemaDefinition
-getSchemaDefinition = do
-  _ <- getSymbol "schema"
-  directives <- M.optional getDirectives
-  operationTypeDefinitions <- getOperationTypeDefintions
-  pure SchemaDefinition
-    { schemaDefinitionDirectives = directives
-    , schemaDefinitionOperationTypes = operationTypeDefinitions
-    }
+getSchemaDefinition = SchemaDefinition
+  <$> (getSymbol "schema" *> M.optional getDirectives)
+  <*> getOperationTypeDefintions
 
 
 getOperationTypeDefintions :: Parser OperationTypeDefinitions
-getOperationTypeDefintions = getInBraces (do
-  value <- M.many getOperationTypeDefintion
-  pure OperationTypeDefinitions
-    { operationTypeDefinitionsValue = value
-    })
+getOperationTypeDefintions = getInBraces $ OperationTypeDefinitions
+  <$> M.many getOperationTypeDefintion
 
 
 getOperationTypeDefintion :: Parser OperationTypeDefinition
-getOperationTypeDefintion = do
-  operation <- getOperationType
-  _ <- getColon
-  type_ <- getNamedType
-  pure OperationTypeDefinition
-    { operationTypeDefinitionOperation = operation
-    , operationTypeDefinitionType = type_
-    }
+getOperationTypeDefintion = OperationTypeDefinition
+  <$> (getOperationType <* getColon)
+  <*> getNamedType
 
 
 getTypeDefinition :: Parser TypeDefinition
 getTypeDefinition = M.choice
-  [ fmap TypeDefinitionScalar getScalarTypeDefinition
-  , fmap TypeDefinitionObject getObjectTypeDefinition
-  , fmap TypeDefinitionInterface getInterfaceTypeDefinition
-  , fmap TypeDefinitionUnion getUnionTypeDefinition
-  , fmap TypeDefinitionEnum getEnumTypeDefinition
-  , fmap TypeDefinitionInputObject getInputObjectTypeDefinition
+  [ TypeDefinitionScalar <$> getScalarTypeDefinition
+  , TypeDefinitionObject <$> getObjectTypeDefinition
+  , TypeDefinitionInterface <$> getInterfaceTypeDefinition
+  , TypeDefinitionUnion <$> getUnionTypeDefinition
+  , TypeDefinitionEnum <$> getEnumTypeDefinition
+  , TypeDefinitionInputObject <$> getInputObjectTypeDefinition
   ]
 
 
 getScalarTypeDefinition :: Parser ScalarTypeDefinition
-getScalarTypeDefinition = do
-  _ <- getSymbol "scalar"
-  name <- getName
-  directives <- M.optional getDirectives
-  pure ScalarTypeDefinition
-    { scalarTypeDefinitionName = name
-    , scalarTypeDefinitionDirectives = directives
-    }
+getScalarTypeDefinition = ScalarTypeDefinition
+  <$> (getSymbol "scalar" *> getName)
+  <*> M.optional getDirectives
 
 
 getObjectTypeDefinition :: Parser ObjectTypeDefinition
-getObjectTypeDefinition = do
-  _ <- getSymbol "type"
-  name <- getName
-  interfaces <- M.optional getInterfaces
-  directives <- M.optional getDirectives
-  fields <- getFieldDefinitions
-  pure ObjectTypeDefinition
-    { objectTypeDefinitionName = name
-    , objectTypeDefinitionInterfaces = interfaces
-    , objectTypeDefinitionDirectives = directives
-    , objectTypeDefinitionFields = fields
-    }
+getObjectTypeDefinition = ObjectTypeDefinition
+  <$> (getSymbol "type" *> getName)
+  <*> M.optional getInterfaces
+  <*> M.optional getDirectives
+  <*> getFieldDefinitions
 
 
 getInterfaces :: Parser Interfaces
-getInterfaces = do
-  _ <- getSymbol "implements"
-  list <- M.some getNamedType
-  case NonEmpty.nonEmpty list of
-    Nothing -> fail "impossible"
-    Just value -> pure Interfaces
-      { interfacesValue = value
-      }
+getInterfaces = Interfaces
+  <$> (getSymbol "implements" *> getNonEmpty getNamedType)
 
 
 getFieldDefinitions :: Parser FieldDefinitions
-getFieldDefinitions = getInBraces (do
-  value <- M.many getFieldDefinition
-  pure FieldDefinitions
-    { fieldDefinitionsValue = value
-    })
+getFieldDefinitions = getInBraces $ FieldDefinitions
+  <$> M.many getFieldDefinition
 
 
 getFieldDefinition :: Parser FieldDefinition
-getFieldDefinition = do
-  name <- getName
-  arguments <- M.optional getInputValueDefinitions
-  _ <- getColon
-  type_ <- getType
-  directives <- M.optional getDirectives
-  pure FieldDefinition
-    { fieldDefinitionName = name
-    , fieldDefinitionArguments = arguments
-    , fieldDefinitionType = type_
-    , fieldDefinitionDirectives = directives
-    }
+getFieldDefinition = FieldDefinition
+  <$> getName
+  <*> (M.optional getInputValueDefinitions <* getColon)
+  <*> getType
+  <*> M.optional getDirectives
 
 
 getInputValueDefinitions :: Parser InputValueDefinitions
-getInputValueDefinitions = getInParentheses (do
-  value <- M.many getInputValueDefinition
-  pure InputValueDefinitions
-    { inputValueDefinitionsValue = value
-    })
+getInputValueDefinitions = getInParentheses $ InputValueDefinitions
+  <$> M.many getInputValueDefinition
 
 
 getInputValueDefinition :: Parser InputValueDefinition
-getInputValueDefinition = do
-  name <- getName
-  _ <- getColon
-  type_ <- getType
-  defaultValue <- M.optional getDefaultValue
-  directives <- M.optional getDirectives
-  pure InputValueDefinition
-    { inputValueDefinitionName = name
-    , inputValueDefinitionType = type_
-    , inputValueDefinitionDefaultValue = defaultValue
-    , inputValueDefinitionDirectives = directives
-    }
+getInputValueDefinition = InputValueDefinition
+  <$> (getName <* getColon)
+  <*> getType
+  <*> M.optional getDefaultValue
+  <*> M.optional getDirectives
 
 
 getInterfaceTypeDefinition :: Parser InterfaceTypeDefinition
-getInterfaceTypeDefinition = do
-  _ <- getSymbol "interface"
-  name <- getName
-  directives <- M.optional getDirectives
-  fieldDefinitions <- getFieldDefinitions
-  pure InterfaceTypeDefinition
-    { interfaceTypeDefinitionName = name
-    , interfaceTypeDefinitionDirectives = directives
-    , interfaceTypeDefinitionFields = fieldDefinitions
-    }
+getInterfaceTypeDefinition = InterfaceTypeDefinition
+  <$> (getSymbol "interface" *> getName)
+  <*> M.optional getDirectives
+  <*> getFieldDefinitions
 
 
 getUnionTypeDefinition :: Parser UnionTypeDefinition
-getUnionTypeDefinition = do
-  _ <- getSymbol "union"
-  name <- getName
-  directives <- M.optional getDirectives
-  _ <- getSymbol "="
-  types <- getUnionTypes
-  pure UnionTypeDefinition
-    { unionTypeDefinitionName = name
-    , unionTypeDefinitionDirectives = directives
-    , unionTypeDefinitionTypes = types
-    }
+getUnionTypeDefinition = UnionTypeDefinition
+  <$> (getSymbol "union" *> getName)
+  <*> M.optional getDirectives
+  <*> (getSymbol "=" *> getUnionTypes)
 
 
+-- TODO
 getUnionTypes :: Parser UnionTypes
 getUnionTypes = do
   list <- M.sepBy1 getNamedType (getSymbol "|")
@@ -767,81 +616,48 @@ getUnionTypes = do
 
 
 getEnumTypeDefinition :: Parser EnumTypeDefinition
-getEnumTypeDefinition = do
-  _ <- getSymbol "enum"
-  name <- getName
-  directives <- M.optional getDirectives
-  values <- getEnumValues
-  pure EnumTypeDefinition
-    { enumTypeDefinitionName = name
-    , enumTypeDefinitionDirectives = directives
-    , enumTypeDefinitionValues = values
-    }
+getEnumTypeDefinition = EnumTypeDefinition
+  <$> (getSymbol "enum" *> getName)
+  <*> M.optional getDirectives
+  <*> getEnumValues
 
 
 getEnumValues :: Parser EnumValues
-getEnumValues = getInBraces (do
-  value <- M.many getEnumValueDefinition
-  pure EnumValues
-    { enumValuesValue = value
-    })
+getEnumValues = getInBraces $ EnumValues
+  <$> M.many getEnumValueDefinition
 
 
 getEnumValueDefinition :: Parser EnumValueDefinition
-getEnumValueDefinition = do
-  name <- getName
-  directives <- M.optional getDirectives
-  pure EnumValueDefinition
-    { enumValueDefinitionName = name
-    , enumValueDefinitionDirectives = directives
-    }
+getEnumValueDefinition = EnumValueDefinition
+  <$> getName
+  <*> M.optional getDirectives
 
 
 getInputObjectTypeDefinition :: Parser InputObjectTypeDefinition
-getInputObjectTypeDefinition = do
-  _ <- getSymbol "input"
-  name <- getName
-  directives <- M.optional getDirectives
-  fields <- getInputFieldDefinitions
-  pure InputObjectTypeDefinition
-    { inputObjectTypeDefinitionName = name
-    , inputObjectTypeDefinitionDirectives = directives
-    , inputObjectTypeDefinitionFields = fields
-    }
+getInputObjectTypeDefinition = InputObjectTypeDefinition
+  <$> (getSymbol "input" *> getName)
+  <*> M.optional getDirectives
+  <*> getInputFieldDefinitions
 
 
 getInputFieldDefinitions :: Parser InputFieldDefinitions
-getInputFieldDefinitions = getInBraces (do
-  value <- M.many getInputValueDefinition
-  pure InputFieldDefinitions
-    { inputFieldDefinitionsValue = value
-    })
+getInputFieldDefinitions = getInBraces $ InputFieldDefinitions
+  <$> M.many getInputValueDefinition
 
 
 getTypeExtensionDefinition :: Parser TypeExtensionDefinition
-getTypeExtensionDefinition = do
-  _ <- getSymbol "extend"
-  value <- getObjectTypeDefinition
-  pure TypeExtensionDefinition
-    { typeExtensionDefinitionValue = value
-    }
+getTypeExtensionDefinition = TypeExtensionDefinition
+  <$> (getSymbol "extend" *> getObjectTypeDefinition)
 
 
 getDirectiveDefinition :: Parser DirectiveDefinition
-getDirectiveDefinition = do
-  _ <- getSymbol "directive"
-  _ <- getSymbol "@"
-  name <- getName
-  arguments <- M.optional getInputValueDefinitions
-  _ <- getSymbol "on"
-  locations <- getDirectiveLocations
-  pure DirectiveDefinition
-    { directiveDefinitionName = name
-    , directiveDefinitionArguments = arguments
-    , directiveDefinitionLocations = locations
-    }
+getDirectiveDefinition = DirectiveDefinition
+  <$> (getSymbol "directive" *> getSymbol "@" *> getName)
+  <*> M.optional getInputValueDefinitions
+  <*> (getSymbol "on" *> getDirectiveLocations)
 
 
+-- TODO
 getDirectiveLocations :: Parser DirectiveLocations
 getDirectiveLocations = do
   list <- M.sepBy1 getName (getSymbol "|")
