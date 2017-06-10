@@ -1,191 +1,190 @@
-{-# LANGUAGE NumDecimals #-}
-
 module Grotesque.Generator where
 
-import Data.Scientific
-import Grotesque
-import Hedgehog
+import Grotesque.Language
 
+import Hedgehog (Gen)
+
+import qualified Data.Scientific as Scientific
 import qualified Data.Text as Text
-import qualified Hedgehog.Gen as G
-import qualified Hedgehog.Range as R
+import qualified Hedgehog.Gen as H
+import qualified Hedgehog.Range as H
 
 
-genDocument :: Gen IO Document
-genDocument = Document <$> G.list (R.linear 0 2) genDefinition
+genDocument :: Monad m => Gen m Document
+genDocument = Document <$> H.list (H.linear 0 2) genDefinition
 
 
-genDefinition :: Gen IO Definition
-genDefinition = G.choice
+genDefinition :: Monad m => Gen m Definition
+genDefinition = H.choice
   [ DefinitionOperation <$> genOperationDefinition
   , DefinitionFragment <$> genFragmentDefinition
   , DefinitionTypeSystem <$> genTypeSystemDefinition
   ]
 
 
-genOperationDefinition :: Gen IO OperationDefinition
+genOperationDefinition :: Monad m => Gen m OperationDefinition
 genOperationDefinition = OperationDefinition
   <$> genOperationType
-  <*> G.maybe genName
-  <*> G.maybe genVariableDefinitions
-  <*> G.maybe genDirectives
+  <*> H.maybe genName
+  <*> H.maybe genVariableDefinitions
+  <*> H.maybe genDirectives
   <*> genSelectionSet
 
 
-genOperationType :: Gen IO OperationType
-genOperationType = G.enumBounded
+genOperationType :: Monad m => Gen m OperationType
+genOperationType = H.enumBounded
 
 
-genName :: Gen IO Name
+genName :: Monad m => Gen m Name
 genName = do
   let
     underscore = ['_']
     uppers = ['A' .. 'Z']
     lowers = ['a' .. 'z']
     digits = ['0' .. '9']
-  first <- G.element $ concat [underscore, uppers, lowers]
-  rest <- G.list (R.linear 0 7) . G.element $ concat [underscore, uppers, lowers, digits]
+  first <- H.element $ concat [underscore, uppers, lowers]
+  rest <- H.list (H.linear 0 7) . H.element $ concat [underscore, uppers, lowers, digits]
   pure . Name . Text.pack $ first : rest
 
 
-genVariableDefinitions :: Gen IO VariableDefinitions
-genVariableDefinitions = VariableDefinitions <$> G.list (R.linear 0 2) genVariableDefinition
+genVariableDefinitions :: Monad m => Gen m VariableDefinitions
+genVariableDefinitions = VariableDefinitions <$> H.list (H.linear 0 2) genVariableDefinition
 
 
-genVariableDefinition :: Gen IO VariableDefinition
+genVariableDefinition :: Monad m => Gen m VariableDefinition
 genVariableDefinition = VariableDefinition
   <$> genVariable
   <*> genType
-  <*> G.maybe genDefaultValue
+  <*> H.maybe genDefaultValue
 
 
-genVariable :: Gen IO Variable
+genVariable :: Monad m => Gen m Variable
 genVariable = Variable <$> genName
 
 
-genType :: Gen IO Type
-genType = G.choice
+genType :: Monad m => Gen m Type
+genType = H.choice
   [ TypeNamed <$> genNamedType
   , TypeList <$> genListType
   , TypeNonNull <$> genNonNullType
   ]
 
 
-genNamedType :: Gen IO NamedType
+genNamedType :: Monad m => Gen m NamedType
 genNamedType = NamedType <$> genName
 
 
-genListType :: Gen IO ListType
+genListType :: Monad m => Gen m ListType
 genListType = ListType <$> genType
 
 
-genNonNullType :: Gen IO NonNullType
-genNonNullType = G.choice
+genNonNullType :: Monad m => Gen m NonNullType
+genNonNullType = H.choice
   [ NonNullTypeNamed <$> genNamedType
   , NonNullTypeList <$> genListType
   ]
 
 
-genDefaultValue :: Gen IO DefaultValue
+genDefaultValue :: Monad m => Gen m DefaultValue
 genDefaultValue = DefaultValue <$> genValue
 
 
-genValue :: Gen IO Value
-genValue = G.choice
+genValue :: Monad m => Gen m Value
+genValue = H.choice
   [ ValueVariable <$> genVariable
-  , ValueInt <$> G.integral (R.linearFrom 0 (-1e9) 1e9)
-  , ValueFloat . fromFloatDigits <$> G.double (R.linearFracFrom 0 (-1e9) 1e9)
-  , ValueString <$> G.text (R.linear 0 8) G.unicode
-  , ValueBoolean <$> G.bool
+  , ValueInt <$> H.integral (H.linearFrom 0 (-1000000000) 1000000000)
+  , ValueFloat . Scientific.fromFloatDigits <$> H.double (H.linearFracFrom 0 (-1e9) 1e9)
+  , ValueString <$> H.text (H.linear 0 8) H.unicode
+  , ValueBoolean <$> H.bool
   , pure ValueNull
   , ValueEnum <$> genName
-  , ValueList <$> G.list (R.linear 0 2) genValue
-  , ValueObject <$> G.list (R.linear 0 2) genObjectField
+  , ValueList <$> H.list (H.linear 0 2) genValue
+  , ValueObject <$> H.list (H.linear 0 2) genObjectField
   ]
 
 
-genObjectField :: Gen IO ObjectField
+genObjectField :: Monad m => Gen m ObjectField
 genObjectField = ObjectField
   <$> genName
   <*> genValue
 
 
-genDirectives :: Gen IO Directives
-genDirectives = Directives <$> G.nonEmpty (R.linear 1 2) genDirective
+genDirectives :: Monad m => Gen m Directives
+genDirectives = Directives <$> H.nonEmpty (H.linear 1 2) genDirective
 
 
-genDirective :: Gen IO Directive
+genDirective :: Monad m => Gen m Directive
 genDirective = Directive
   <$> genName
-  <*> G.maybe genArguments
+  <*> H.maybe genArguments
 
 
-genSelectionSet :: Gen IO SelectionSet
-genSelectionSet = SelectionSet <$> G.list (R.linear 0 2) genSelection
+genSelectionSet :: Monad m => Gen m SelectionSet
+genSelectionSet = SelectionSet <$> H.list (H.linear 0 2) genSelection
 
 
-genSelection :: Gen IO Selection
-genSelection = G.choice
+genSelection :: Monad m => Gen m Selection
+genSelection = H.choice
   [ SelectionField <$> genField
   , SelectionFragmentSpread <$> genFragmentSpread
   , SelectionInlineFragment <$> genInlineFragment
   ]
 
 
-genField :: Gen IO Field
+genField :: Monad m => Gen m Field
 genField = Field
-  <$> G.maybe genAlias
+  <$> H.maybe genAlias
   <*> genName
-  <*> G.maybe genArguments
-  <*> G.maybe genDirectives
-  <*> G.maybe genSelectionSet
+  <*> H.maybe genArguments
+  <*> H.maybe genDirectives
+  <*> H.maybe genSelectionSet
 
 
-genAlias :: Gen IO Alias
+genAlias :: Monad m => Gen m Alias
 genAlias = Alias <$> genName
 
 
-genArguments :: Gen IO Arguments
-genArguments = Arguments <$> G.list (R.linear 0 2) genArgument
+genArguments :: Monad m => Gen m Arguments
+genArguments = Arguments <$> H.list (H.linear 0 2) genArgument
 
 
-genArgument :: Gen IO Argument
+genArgument :: Monad m => Gen m Argument
 genArgument = Argument
   <$> genName
   <*> genValue
 
 
-genFragmentSpread :: Gen IO FragmentSpread
+genFragmentSpread :: Monad m => Gen m FragmentSpread
 genFragmentSpread = FragmentSpread
   <$> genFragmentName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
 
 
-genFragmentName :: Gen IO FragmentName
+genFragmentName :: Monad m => Gen m FragmentName
 genFragmentName = FragmentName <$> genName
 
 
-genInlineFragment :: Gen IO InlineFragment
+genInlineFragment :: Monad m => Gen m InlineFragment
 genInlineFragment = InlineFragment
-  <$> G.maybe genTypeCondition
-  <*> G.maybe genDirectives
+  <$> H.maybe genTypeCondition
+  <*> H.maybe genDirectives
   <*> genSelectionSet
 
 
-genTypeCondition :: Gen IO TypeCondition
+genTypeCondition :: Monad m => Gen m TypeCondition
 genTypeCondition = TypeCondition <$> genNamedType
 
 
-genFragmentDefinition :: Gen IO FragmentDefinition
+genFragmentDefinition :: Monad m => Gen m FragmentDefinition
 genFragmentDefinition = FragmentDefinition
   <$> genFragmentName
   <*> genTypeCondition
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
   <*> genSelectionSet
 
 
-genTypeSystemDefinition :: Gen IO TypeSystemDefinition
-genTypeSystemDefinition = G.choice
+genTypeSystemDefinition :: Monad m => Gen m TypeSystemDefinition
+genTypeSystemDefinition = H.choice
   [ TypeSystemDefinitionSchema <$> genSchemaDefinition
   , TypeSystemDefinitionType <$> genTypeDefinition
   , TypeSystemDefinitionTypeExtension <$> genTypeExtensionDefinition
@@ -193,24 +192,24 @@ genTypeSystemDefinition = G.choice
   ]
 
 
-genSchemaDefinition :: Gen IO SchemaDefinition
+genSchemaDefinition :: Monad m => Gen m SchemaDefinition
 genSchemaDefinition = SchemaDefinition
-  <$> G.maybe genDirectives
+  <$> H.maybe genDirectives
   <*> genOperationTypeDefinitions
 
 
-genOperationTypeDefinitions :: Gen IO OperationTypeDefinitions
-genOperationTypeDefinitions = OperationTypeDefinitions <$> G.list (R.linear 0 2) genOperationTypeDefinition
+genOperationTypeDefinitions :: Monad m => Gen m OperationTypeDefinitions
+genOperationTypeDefinitions = OperationTypeDefinitions <$> H.list (H.linear 0 2) genOperationTypeDefinition
 
 
-genOperationTypeDefinition :: Gen IO OperationTypeDefinition
+genOperationTypeDefinition :: Monad m => Gen m OperationTypeDefinition
 genOperationTypeDefinition = OperationTypeDefinition
   <$> genOperationType
   <*> genNamedType
 
 
-genTypeDefinition :: Gen IO TypeDefinition
-genTypeDefinition = G.choice
+genTypeDefinition :: Monad m => Gen m TypeDefinition
+genTypeDefinition = H.choice
   [ TypeDefinitionScalar <$> genScalarTypeDefinition
   , TypeDefinitionObject <$> genObjectTypeDefinition
   , TypeDefinitionInterface <$> genInterfaceTypeDefinition
@@ -220,104 +219,104 @@ genTypeDefinition = G.choice
   ]
 
 
-genScalarTypeDefinition :: Gen IO ScalarTypeDefinition
+genScalarTypeDefinition :: Monad m => Gen m ScalarTypeDefinition
 genScalarTypeDefinition = ScalarTypeDefinition
   <$> genName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
 
 
-genObjectTypeDefinition :: Gen IO ObjectTypeDefinition
+genObjectTypeDefinition :: Monad m => Gen m ObjectTypeDefinition
 genObjectTypeDefinition = ObjectTypeDefinition
   <$> genName
-  <*> G.maybe genInterfaces
-  <*> G.maybe genDirectives
+  <*> H.maybe genInterfaces
+  <*> H.maybe genDirectives
   <*> genFieldDefinitions
 
 
-genInterfaces :: Gen IO Interfaces
-genInterfaces = Interfaces <$> G.nonEmpty (R.linear 1 2) genNamedType
+genInterfaces :: Monad m => Gen m Interfaces
+genInterfaces = Interfaces <$> H.nonEmpty (H.linear 1 2) genNamedType
 
 
-genFieldDefinitions :: Gen IO FieldDefinitions
-genFieldDefinitions = FieldDefinitions <$> G.list (R.linear 0 2) genFieldDefinition
+genFieldDefinitions :: Monad m => Gen m FieldDefinitions
+genFieldDefinitions = FieldDefinitions <$> H.list (H.linear 0 2) genFieldDefinition
 
 
-genFieldDefinition :: Gen IO FieldDefinition
+genFieldDefinition :: Monad m => Gen m FieldDefinition
 genFieldDefinition = FieldDefinition
   <$> genName
-  <*> G.maybe genInputValueDefinitions
+  <*> H.maybe genInputValueDefinitions
   <*> genType
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
 
 
-genInputValueDefinitions :: Gen IO InputValueDefinitions
-genInputValueDefinitions = InputValueDefinitions <$> G.list (R.linear 0 2) genInputValueDefinition
+genInputValueDefinitions :: Monad m => Gen m InputValueDefinitions
+genInputValueDefinitions = InputValueDefinitions <$> H.list (H.linear 0 2) genInputValueDefinition
 
 
-genInputValueDefinition :: Gen IO InputValueDefinition
+genInputValueDefinition :: Monad m => Gen m InputValueDefinition
 genInputValueDefinition = InputValueDefinition
   <$> genName
   <*> genType
-  <*> G.maybe genDefaultValue
-  <*> G.maybe genDirectives
+  <*> H.maybe genDefaultValue
+  <*> H.maybe genDirectives
 
 
-genInterfaceTypeDefinition :: Gen IO InterfaceTypeDefinition
+genInterfaceTypeDefinition :: Monad m => Gen m InterfaceTypeDefinition
 genInterfaceTypeDefinition = InterfaceTypeDefinition
   <$> genName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
   <*> genFieldDefinitions
 
 
-genUnionTypeDefinition :: Gen IO UnionTypeDefinition
+genUnionTypeDefinition :: Monad m => Gen m UnionTypeDefinition
 genUnionTypeDefinition = UnionTypeDefinition
   <$> genName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
   <*> genUnionTypes
 
 
-genUnionTypes :: Gen IO UnionTypes
-genUnionTypes = UnionTypes <$> G.nonEmpty (R.linear 1 2) genNamedType
+genUnionTypes :: Monad m => Gen m UnionTypes
+genUnionTypes = UnionTypes <$> H.nonEmpty (H.linear 1 2) genNamedType
 
 
-genEnumTypeDefinition :: Gen IO EnumTypeDefinition
+genEnumTypeDefinition :: Monad m => Gen m EnumTypeDefinition
 genEnumTypeDefinition = EnumTypeDefinition
   <$> genName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
   <*> genEnumValues
 
 
-genEnumValues :: Gen IO EnumValues
-genEnumValues = EnumValues <$> G.list (R.linear 0 2) genEnumValueDefinition
+genEnumValues :: Monad m => Gen m EnumValues
+genEnumValues = EnumValues <$> H.list (H.linear 0 2) genEnumValueDefinition
 
 
-genEnumValueDefinition :: Gen IO EnumValueDefinition
+genEnumValueDefinition :: Monad m => Gen m EnumValueDefinition
 genEnumValueDefinition = EnumValueDefinition
   <$> genName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
 
 
-genInputObjectTypeDefinition :: Gen IO InputObjectTypeDefinition
+genInputObjectTypeDefinition :: Monad m => Gen m InputObjectTypeDefinition
 genInputObjectTypeDefinition = InputObjectTypeDefinition
   <$> genName
-  <*> G.maybe genDirectives
+  <*> H.maybe genDirectives
   <*> genInputFieldDefinitions
 
 
-genInputFieldDefinitions :: Gen IO InputFieldDefinitions
-genInputFieldDefinitions = InputFieldDefinitions <$> G.list (R.linear 0 2) genInputValueDefinition
+genInputFieldDefinitions :: Monad m => Gen m InputFieldDefinitions
+genInputFieldDefinitions = InputFieldDefinitions <$> H.list (H.linear 0 2) genInputValueDefinition
 
 
-genTypeExtensionDefinition :: Gen IO TypeExtensionDefinition
+genTypeExtensionDefinition :: Monad m => Gen m TypeExtensionDefinition
 genTypeExtensionDefinition = TypeExtensionDefinition <$> genObjectTypeDefinition
 
 
-genDirectiveDefinition :: Gen IO DirectiveDefinition
+genDirectiveDefinition :: Monad m => Gen m DirectiveDefinition
 genDirectiveDefinition = DirectiveDefinition
   <$> genName
-  <*> G.maybe genInputValueDefinitions
+  <*> H.maybe genInputValueDefinitions
   <*> genDirectiveLocations
 
 
-genDirectiveLocations :: Gen IO DirectiveLocations
-genDirectiveLocations = DirectiveLocations <$> G.nonEmpty (R.linear 1 2) genName
+genDirectiveLocations :: Monad m => Gen m DirectiveLocations
+genDirectiveLocations = DirectiveLocations <$> H.nonEmpty (H.linear 1 2) genName
