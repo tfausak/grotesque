@@ -298,7 +298,14 @@ genEnumValueDefinition = EnumValueDefinition
 
 
 genInputObjectTypeDefinition :: Gen IO InputObjectTypeDefinition
-genInputObjectTypeDefinition = G.discard -- TODO
+genInputObjectTypeDefinition = InputObjectTypeDefinition
+  <$> genName
+  <*> G.maybe genDirectives
+  <*> genInputFieldDefinitions
+
+
+genInputFieldDefinitions :: Gen IO InputFieldDefinitions
+genInputFieldDefinitions = InputFieldDefinitions <$> G.list (R.linear 0 2) genInputValueDefinition
 
 
 genTypeExtensionDefinition :: Gen IO TypeExtensionDefinition

@@ -797,7 +797,24 @@ getEnumValueDefinition = do
 
 
 getInputObjectTypeDefinition :: Parser InputObjectTypeDefinition
-getInputObjectTypeDefinition = fail "" -- TODO
+getInputObjectTypeDefinition = do
+  _ <- getSymbol "input"
+  name <- getName
+  directives <- optional getDirectives
+  fields <- getInputFieldDefinitions
+  pure InputObjectTypeDefinition
+    { inputObjectTypeDefinitionName = name
+    , inputObjectTypeDefinitionDirectives = directives
+    , inputObjectTypeDefinitionFields = fields
+    }
+
+
+getInputFieldDefinitions :: Parser InputFieldDefinitions
+getInputFieldDefinitions = getInBraces (do
+  value <- many getInputValueDefinition
+  pure InputFieldDefinitions
+    { inputFieldDefinitionsValue = value
+    })
 
 
 getTypeExtensionDefinition :: Parser TypeExtensionDefinition

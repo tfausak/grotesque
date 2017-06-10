@@ -305,6 +305,18 @@ main = do
         " enum e { t @ d s } "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Nothing, enumTypeDefinitionValues = EnumValues {enumValuesValue = [EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "t"}, enumValueDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})},EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "s"}, enumValueDefinitionDirectives = Nothing}]}})))]}
 
+      itParses "an input type"
+        " input i { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Nothing, inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = []}})))]}
+
+      itParses "an input type with a directive"
+        " input i @ d { } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = []}})))]}
+
+      itParses "an input type with a field"
+        " input i { f : t } "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Nothing, inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "f"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Nothing}]}})))]}
+
     context "pretty printer" $ do
 
       itPrettyPrints "an empty document"
@@ -538,6 +550,18 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
       itPrettyPrints "an enum type with some values"
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionEnum (EnumTypeDefinition {enumTypeDefinitionName = Name {nameValue = "e"}, enumTypeDefinitionDirectives = Nothing, enumTypeDefinitionValues = EnumValues {enumValuesValue = [EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "t"}, enumValueDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]})},EnumValueDefinition {enumValueDefinitionName = Name {nameValue = "s"}, enumValueDefinitionDirectives = Nothing}]}})))]}
         "enum e {t @d s}"
+
+      itPrettyPrints "an input type"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Nothing, inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = []}})))]}
+        "input i {}"
+
+      itPrettyPrints "an input type with a directive"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Just (Directives {directivesValue = [Directive {directiveName = Name {nameValue = "d"}, directiveArguments = Nothing}]}), inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = []}})))]}
+        "input i @d {}"
+
+      itPrettyPrints "an input type with a field"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionType (TypeDefinitionInputObject (InputObjectTypeDefinition {inputObjectTypeDefinitionName = Name {nameValue = "i"}, inputObjectTypeDefinitionDirectives = Nothing, inputObjectTypeDefinitionFields = InputFieldDefinitions {inputFieldDefinitionsValue = [InputValueDefinition {inputValueDefinitionName = Name {nameValue = "f"}, inputValueDefinitionType = TypeNamed (NamedType {namedTypeValue = Name {nameValue = "t"}}), inputValueDefinitionDefaultValue = Nothing, inputValueDefinitionDirectives = Nothing}]}})))]}
+        "input i {f: t}"
 
   _ <- checkParallel $$(discover)
   pure ()

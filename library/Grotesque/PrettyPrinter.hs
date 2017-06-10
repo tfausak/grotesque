@@ -388,7 +388,17 @@ prettyEnumValueDefinition x = sep (catMaybes
 
 
 prettyInputObjectTypeDefinition :: InputObjectTypeDefinition -> Doc ()
-prettyInputObjectTypeDefinition _ = mempty -- TODO
+prettyInputObjectTypeDefinition x = sep (catMaybes
+  [ Just (pretty "input")
+  , Just (prettyName (inputObjectTypeDefinitionName x))
+  , fmap prettyDirectives (inputObjectTypeDefinitionDirectives x)
+  , Just (prettyInputFieldDefinitions (inputObjectTypeDefinitionFields x))
+  ])
+
+
+prettyInputFieldDefinitions :: InputFieldDefinitions -> Doc ()
+prettyInputFieldDefinitions x =
+  braces (sep (map prettyInputValueDefinition (inputFieldDefinitionsValue x)))
 
 
 prettyTypeExtensionDefinition :: TypeExtensionDefinition -> Doc ()

@@ -329,7 +329,12 @@ data EnumValueDefinition = EnumValueDefinition
 data InputObjectTypeDefinition = InputObjectTypeDefinition
   { inputObjectTypeDefinitionName :: Name
   , inputObjectTypeDefinitionDirectives :: Maybe Directives
-  , inputObjectTypeDefinitionField :: [InputValueDefinition]
+  , inputObjectTypeDefinitionFields :: InputFieldDefinitions
+  } deriving (Eq, Show)
+
+
+newtype InputFieldDefinitions = InputFieldDefinitions
+  { inputFieldDefinitionsValue :: [InputValueDefinition]
   } deriving (Eq, Show)
 
 
