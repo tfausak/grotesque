@@ -827,4 +827,25 @@ getTypeExtensionDefinition = do
 
 
 getDirectiveDefinition :: Parser DirectiveDefinition
-getDirectiveDefinition = fail "" -- TODO
+getDirectiveDefinition = do
+  _ <- getSymbol "directive"
+  _ <- getSymbol "@"
+  name <- getName
+  arguments <- optional getInputValueDefinitions
+  _ <- getSymbol "on"
+  locations <- getDirectiveLocations
+  pure DirectiveDefinition
+    { directiveDefinitionName = name
+    , directiveDefinitionArguments = arguments
+    , directiveDefinitionLocations = locations
+    }
+
+
+getDirectiveLocations :: Parser DirectiveLocations
+getDirectiveLocations = do
+  list <- sepBy1 getName (getSymbol "|")
+  case nonEmpty list of
+    Nothing -> fail "impossible"
+    Just value -> pure DirectiveLocations
+      { directiveLocationsValue = value
+      }

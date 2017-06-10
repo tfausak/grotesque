@@ -313,4 +313,11 @@ genTypeExtensionDefinition = TypeExtensionDefinition <$> genObjectTypeDefinition
 
 
 genDirectiveDefinition :: Gen IO DirectiveDefinition
-genDirectiveDefinition = G.discard -- TODO
+genDirectiveDefinition = DirectiveDefinition
+  <$> genName
+  <*> G.maybe genInputValueDefinitions
+  <*> genDirectiveLocations
+
+
+genDirectiveLocations :: Gen IO DirectiveLocations
+genDirectiveLocations = DirectiveLocations <$> G.nonEmpty (R.linear 1 2) genName

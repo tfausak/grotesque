@@ -321,6 +321,10 @@ main = do
         " extend type t { } "
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionTypeExtension (TypeExtensionDefinition {typeExtensionDefinitionValue = ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}}}))]}
 
+      itParses "a directive definition"
+        " directive @ d on t "
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionDirective (DirectiveDefinition {directiveDefinitionName = Name {nameValue = "d"}, directiveDefinitionArguments = Nothing, directiveDefinitionLocations = DirectiveLocations {directiveLocationsValue = [Name {nameValue = "t"}]}}))]}
+
     context "pretty printer" $ do
 
       itPrettyPrints "an empty document"
@@ -570,6 +574,10 @@ query {unnamed (truthy: true falsey: false nullish: null) query}|]
       itPrettyPrints "a type extension"
         Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionTypeExtension (TypeExtensionDefinition {typeExtensionDefinitionValue = ObjectTypeDefinition {objectTypeDefinitionName = Name {nameValue = "t"}, objectTypeDefinitionInterfaces = Nothing, objectTypeDefinitionDirectives = Nothing, objectTypeDefinitionFields = FieldDefinitions {fieldDefinitionsValue = []}}}))]}
         "extend type t {}"
+
+      itPrettyPrints "a directive definition"
+        Document {documentValue = [DefinitionTypeSystem (TypeSystemDefinitionDirective (DirectiveDefinition {directiveDefinitionName = Name {nameValue = "d"}, directiveDefinitionArguments = Nothing, directiveDefinitionLocations = DirectiveLocations {directiveLocationsValue = [Name {nameValue = "t"}]}}))]}
+        "directive @d on t"
 
   _ <- checkParallel $$(discover)
   pure ()

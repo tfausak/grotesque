@@ -345,6 +345,11 @@ newtype TypeExtensionDefinition = TypeExtensionDefinition
 
 data DirectiveDefinition = DirectiveDefinition
   { directiveDefinitionName :: Name
-  , directiveDefinitionArguments :: Maybe [InputValueDefinition]
-  , directiveDefinitionLocations :: [Name]
+  , directiveDefinitionArguments :: Maybe InputValueDefinitions
+  , directiveDefinitionLocations :: DirectiveLocations
+  } deriving (Eq, Show)
+
+
+newtype DirectiveLocations = DirectiveLocations
+  { directiveLocationsValue :: NonEmpty Name
   } deriving (Eq, Show)

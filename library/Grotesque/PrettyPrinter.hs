@@ -409,4 +409,15 @@ prettyTypeExtensionDefinition x = sep
 
 
 prettyDirectiveDefinition :: DirectiveDefinition -> Doc ()
-prettyDirectiveDefinition _ = mempty -- TODO
+prettyDirectiveDefinition x = sep (catMaybes
+  [ Just (pretty "directive")
+  , Just (hcat [pretty "@", prettyName (directiveDefinitionName x)])
+  , fmap prettyInputValueDefinitions (directiveDefinitionArguments x)
+  , Just (pretty "on")
+  , Just (prettyDirectiveLocations (directiveDefinitionLocations x))
+  ])
+
+
+prettyDirectiveLocations :: DirectiveLocations -> Doc ()
+prettyDirectiveLocations x = encloseSep mempty mempty (space <> pretty "|" <> space)
+  (map prettyName (toList (directiveLocationsValue x)))
