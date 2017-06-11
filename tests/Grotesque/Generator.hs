@@ -2,6 +2,8 @@ module Grotesque.Generator where
 
 import Grotesque.Language
 
+import Data.Scientific (Scientific)
+import Data.Text (Text)
 import Hedgehog (Gen)
 
 import qualified Data.Scientific as Scientific
@@ -11,7 +13,8 @@ import qualified Hedgehog.Range as H
 
 
 genDocument :: Monad m => Gen m Document
-genDocument = Document <$> H.list (H.linear 0 2) genDefinition
+genDocument = Document
+  <$> H.list (H.linear 0 2) genDefinition
 
 
 genDefinition :: Monad m => Gen m Definition
@@ -36,19 +39,22 @@ genOperationType = H.enumBounded
 
 
 genName :: Monad m => Gen m Name
-genName = do
-  let
-    underscore = ['_']
-    uppers = ['A' .. 'Z']
-    lowers = ['a' .. 'z']
-    digits = ['0' .. '9']
-  first <- H.element $ concat [underscore, uppers, lowers]
-  rest <- H.list (H.linear 0 7) . H.element $ concat [underscore, uppers, lowers, digits]
-  pure . Name . Text.pack $ first : rest
+genName = (\h t -> Name (Text.pack (h : t)))
+  <$> H.element nameFirstChars
+  <*> H.list (H.linear 0 7) (H.element nameRestChars)
+
+
+nameFirstChars :: [Char]
+nameFirstChars = concat [['_'], ['A' .. 'Z'], ['a' .. 'z']]
+
+
+nameRestChars :: [Char]
+nameRestChars = concat [nameFirstChars, ['0' .. '9']]
 
 
 genVariableDefinitions :: Monad m => Gen m VariableDefinitions
-genVariableDefinitions = VariableDefinitions <$> H.list (H.linear 0 2) genVariableDefinition
+genVariableDefinitions = VariableDefinitions
+  <$> H.list (H.linear 0 2) genVariableDefinition
 
 
 genVariableDefinition :: Monad m => Gen m VariableDefinition
@@ -59,7 +65,8 @@ genVariableDefinition = VariableDefinition
 
 
 genVariable :: Monad m => Gen m Variable
-genVariable = Variable <$> genName
+genVariable = Variable
+  <$> genName
 
 
 genType :: Monad m => Gen m Type
@@ -86,21 +93,51 @@ genNonNullType = H.choice
 
 
 genDefaultValue :: Monad m => Gen m DefaultValue
-genDefaultValue = DefaultValue <$> genValue
+genDefaultValue = DefaultValue
+  <$> genValue
 
 
 genValue :: Monad m => Gen m Value
 genValue = H.choice
   [ ValueVariable <$> genVariable
-  , ValueInt <$> H.integral (H.linearFrom 0 (-1000000000) 1000000000)
-  , ValueFloat . Scientific.fromFloatDigits <$> H.double (H.linearFracFrom 0 (-1e9) 1e9)
-  , ValueString <$> H.text (H.linear 0 8) H.unicode
-  , ValueBoolean <$> H.bool
+  , ValueInt <$> genInt
+  , ValueFloat <$> genFloat
+  , ValueString <$> genString
+  , ValueBoolean <$> genBoolean
   , pure ValueNull
-  , ValueEnum <$> genName
-  , ValueList <$> H.list (H.linear 0 2) genValue
-  , ValueObject <$> H.list (H.linear 0 2) genObjectField
+  , ValueEnum <$> genEnum
+  , ValueList <$> genList
+  , ValueObject <$> genObject
   ]
+
+
+genInt :: Monad m => Gen m Integer
+genInt = H.integral (H.linearFrom 0 (-1000000000) 1000000000)
+
+
+genFloat :: Monad m => Gen m Scientific
+genFloat = Scientific.fromFloatDigits
+  <$> H.double (H.linearFracFrom 0 (-1e9) 1e9)
+
+
+genString :: Monad m => Gen m Text
+genString = H.text (H.linear 0 8) H.unicode
+
+
+genBoolean :: Monad m => Gen m Bool
+genBoolean = H.bool
+
+
+genEnum :: Monad m => Gen m Name
+genEnum = genName
+
+
+genList :: Monad m => Gen m [Value]
+genList = H.list (H.linear 0 2) genValue
+
+
+genObject :: Monad m => Gen m [ObjectField]
+genObject = H.list (H.linear 0 2) genObjectField
 
 
 genObjectField :: Monad m => Gen m ObjectField
@@ -110,7 +147,8 @@ genObjectField = ObjectField
 
 
 genDirectives :: Monad m => Gen m Directives
-genDirectives = Directives <$> H.nonEmpty (H.linear 1 2) genDirective
+genDirectives = Directives
+  <$> H.nonEmpty (H.linear 1 2) genDirective
 
 
 genDirective :: Monad m => Gen m Directive
@@ -120,7 +158,8 @@ genDirective = Directive
 
 
 genSelectionSet :: Monad m => Gen m SelectionSet
-genSelectionSet = SelectionSet <$> H.list (H.linear 0 2) genSelection
+genSelectionSet = SelectionSet
+  <$> H.list (H.linear 0 2) genSelection
 
 
 genSelection :: Monad m => Gen m Selection
@@ -145,7 +184,8 @@ genAlias = Alias <$> genName
 
 
 genArguments :: Monad m => Gen m Arguments
-genArguments = Arguments <$> H.list (H.linear 0 2) genArgument
+genArguments = Arguments
+  <$> H.list (H.linear 0 2) genArgument
 
 
 genArgument :: Monad m => Gen m Argument
@@ -161,7 +201,8 @@ genFragmentSpread = FragmentSpread
 
 
 genFragmentName :: Monad m => Gen m FragmentName
-genFragmentName = FragmentName <$> genName
+genFragmentName = FragmentName
+  <$> genName
 
 
 genInlineFragment :: Monad m => Gen m InlineFragment
@@ -172,7 +213,8 @@ genInlineFragment = InlineFragment
 
 
 genTypeCondition :: Monad m => Gen m TypeCondition
-genTypeCondition = TypeCondition <$> genNamedType
+genTypeCondition = TypeCondition
+  <$> genNamedType
 
 
 genFragmentDefinition :: Monad m => Gen m FragmentDefinition
@@ -199,7 +241,8 @@ genSchemaDefinition = SchemaDefinition
 
 
 genOperationTypeDefinitions :: Monad m => Gen m OperationTypeDefinitions
-genOperationTypeDefinitions = OperationTypeDefinitions <$> H.list (H.linear 0 2) genOperationTypeDefinition
+genOperationTypeDefinitions = OperationTypeDefinitions
+  <$> H.list (H.linear 0 2) genOperationTypeDefinition
 
 
 genOperationTypeDefinition :: Monad m => Gen m OperationTypeDefinition
@@ -234,11 +277,13 @@ genObjectTypeDefinition = ObjectTypeDefinition
 
 
 genInterfaces :: Monad m => Gen m Interfaces
-genInterfaces = Interfaces <$> H.nonEmpty (H.linear 1 2) genNamedType
+genInterfaces = Interfaces
+  <$> H.nonEmpty (H.linear 1 2) genNamedType
 
 
 genFieldDefinitions :: Monad m => Gen m FieldDefinitions
-genFieldDefinitions = FieldDefinitions <$> H.list (H.linear 0 2) genFieldDefinition
+genFieldDefinitions = FieldDefinitions
+  <$> H.list (H.linear 0 2) genFieldDefinition
 
 
 genFieldDefinition :: Monad m => Gen m FieldDefinition
@@ -250,7 +295,8 @@ genFieldDefinition = FieldDefinition
 
 
 genInputValueDefinitions :: Monad m => Gen m InputValueDefinitions
-genInputValueDefinitions = InputValueDefinitions <$> H.list (H.linear 0 2) genInputValueDefinition
+genInputValueDefinitions = InputValueDefinitions
+  <$> H.list (H.linear 0 2) genInputValueDefinition
 
 
 genInputValueDefinition :: Monad m => Gen m InputValueDefinition
@@ -276,7 +322,8 @@ genUnionTypeDefinition = UnionTypeDefinition
 
 
 genUnionTypes :: Monad m => Gen m UnionTypes
-genUnionTypes = UnionTypes <$> H.nonEmpty (H.linear 1 2) genNamedType
+genUnionTypes = UnionTypes
+  <$> H.nonEmpty (H.linear 1 2) genNamedType
 
 
 genEnumTypeDefinition :: Monad m => Gen m EnumTypeDefinition
@@ -287,7 +334,8 @@ genEnumTypeDefinition = EnumTypeDefinition
 
 
 genEnumValues :: Monad m => Gen m EnumValues
-genEnumValues = EnumValues <$> H.list (H.linear 0 2) genEnumValueDefinition
+genEnumValues = EnumValues
+  <$> H.list (H.linear 0 2) genEnumValueDefinition
 
 
 genEnumValueDefinition :: Monad m => Gen m EnumValueDefinition
@@ -304,11 +352,13 @@ genInputObjectTypeDefinition = InputObjectTypeDefinition
 
 
 genInputFieldDefinitions :: Monad m => Gen m InputFieldDefinitions
-genInputFieldDefinitions = InputFieldDefinitions <$> H.list (H.linear 0 2) genInputValueDefinition
+genInputFieldDefinitions = InputFieldDefinitions
+  <$> H.list (H.linear 0 2) genInputValueDefinition
 
 
 genTypeExtensionDefinition :: Monad m => Gen m TypeExtensionDefinition
-genTypeExtensionDefinition = TypeExtensionDefinition <$> genObjectTypeDefinition
+genTypeExtensionDefinition = TypeExtensionDefinition
+  <$> genObjectTypeDefinition
 
 
 genDirectiveDefinition :: Monad m => Gen m DirectiveDefinition
@@ -319,4 +369,5 @@ genDirectiveDefinition = DirectiveDefinition
 
 
 genDirectiveLocations :: Monad m => Gen m DirectiveLocations
-genDirectiveLocations = DirectiveLocations <$> H.nonEmpty (H.linear 1 2) genName
+genDirectiveLocations = DirectiveLocations
+  <$> H.nonEmpty (H.linear 1 2) genName
