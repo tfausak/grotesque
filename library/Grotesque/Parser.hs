@@ -123,11 +123,13 @@ getDirectives = Directives
 
 
 getNonEmpty :: Parser a -> Parser (NonEmpty a)
-getNonEmpty x = do
-  list <- M.some x
-  case NonEmpty.nonEmpty list of
-    Nothing -> fail "getNonEmpty: impossible"
-    Just value -> pure value
+getNonEmpty x = getNonEmpty' x x
+
+
+getNonEmpty' :: Parser a -> Parser a -> Parser (NonEmpty a)
+getNonEmpty' getFirst getRest = (NonEmpty.:|)
+  <$> getFirst
+  <*> M.many getRest
 
 
 getDirective :: Parser Directive
@@ -180,19 +182,17 @@ getColon :: Parser String
 getColon = getSymbol ":"
 
 
--- TODO
 getName :: Parser Name
-getName = getLexeme (do
-  let
-    underscore = ['_']
-    uppers = ['A' .. 'Z']
-    lowers = ['a' .. 'z']
-    digits = ['0' .. '9']
-  first <- M.oneOf (concat [underscore, uppers, lowers])
-  rest <- M.many (M.oneOf (concat [underscore, digits, uppers, lowers]))
-  pure Name
-    { nameValue = Text.pack (first : rest)
-    })
+getName = getLexeme $ (Name . Text.pack . NonEmpty.toList)
+  <$> getNonEmpty' (M.oneOf nameFirstChars) (M.oneOf nameRestChars)
+
+
+nameFirstChars :: [Char]
+nameFirstChars = concat [['_'], ['A' .. 'Z'], ['a' .. 'z']]
+
+
+nameRestChars :: [Char]
+nameRestChars = concat [nameFirstChars, ['0' .. '9']]
 
 
 getArguments :: Parser Arguments
@@ -604,15 +604,9 @@ getUnionTypeDefinition = UnionTypeDefinition
   <*> (getSymbol "=" *> getUnionTypes)
 
 
--- TODO
 getUnionTypes :: Parser UnionTypes
-getUnionTypes = do
-  list <- M.sepBy1 getNamedType (getSymbol "|")
-  case NonEmpty.nonEmpty list of
-    Nothing -> fail "impossible"
-    Just value -> pure UnionTypes
-      { unionTypesValue = value
-      }
+getUnionTypes = UnionTypes
+  <$> getNonEmpty' getNamedType (getSymbol "|" *> getNamedType)
 
 
 getEnumTypeDefinition :: Parser EnumTypeDefinition
@@ -657,12 +651,6 @@ getDirectiveDefinition = DirectiveDefinition
   <*> (getSymbol "on" *> getDirectiveLocations)
 
 
--- TODO
 getDirectiveLocations :: Parser DirectiveLocations
-getDirectiveLocations = do
-  list <- M.sepBy1 getName (getSymbol "|")
-  case NonEmpty.nonEmpty list of
-    Nothing -> fail "impossible"
-    Just value -> pure DirectiveLocations
-      { directiveLocationsValue = value
-      }
+getDirectiveLocations = DirectiveLocations
+  <$> getNonEmpty' getName (getSymbol "|" *> getName)
