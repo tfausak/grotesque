@@ -21,7 +21,8 @@ import qualified Text.Printf as Printf
 
 prettyPrintDocument :: Document -> Text
 prettyPrintDocument x =
-  P.renderStrict (P.layoutPretty (P.LayoutOptions P.Unbounded) (prettyDocument x))
+  P.renderStrict
+    (P.layoutPretty (P.LayoutOptions P.Unbounded) (prettyDocument x))
 
 prettyDocument :: Document -> Doc a
 prettyDocument Document {..} = P.vsep (map prettyDefinition documentValue)
