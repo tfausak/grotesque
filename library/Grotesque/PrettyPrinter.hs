@@ -1,9 +1,12 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Grotesque.PrettyPrinter where
 
 import Grotesque.Language
 
 import Data.Scientific (Scientific)
 import Data.Text (Text)
+import Data.Text.Lazy.Builder (Builder)
 import Data.Text.Prettyprint.Doc (Doc)
 
 import qualified Data.Bits as Bits
@@ -18,413 +21,407 @@ import qualified Text.Printf as Printf
 
 prettyPrintDocument :: Document -> Text
 prettyPrintDocument x =
-  P.renderStrict (P.layoutPretty (P.LayoutOptions P.Unbounded) (prettyDocument x))
+  P.renderStrict
+    (P.layoutPretty (P.LayoutOptions P.Unbounded) (prettyDocument x))
 
+prettyDocument :: Document -> Doc a
+prettyDocument Document {..} = P.vsep (map prettyDefinition documentValue)
 
-prettyDocument :: Document -> Doc ()
-prettyDocument x = P.vsep (map prettyDefinition (documentValue x))
+prettyDefinition :: Definition -> Doc a
+prettyDefinition x =
+  case x of
+    DefinitionOperation y -> prettyOperationDefinition y
+    DefinitionFragment y -> prettyFragmentDefinition y
+    DefinitionTypeSystem y -> prettyTypeSystemDefinition y
 
-
-prettyDefinition :: Definition -> Doc ()
-prettyDefinition x = case x of
-  DefinitionOperation y -> prettyOperationDefinition y
-  DefinitionFragment y -> prettyFragmentDefinition y
-  DefinitionTypeSystem y -> prettyTypeSystemDefinition y
-
-
-prettyOperationDefinition :: OperationDefinition -> Doc ()
-prettyOperationDefinition x = P.sep (Maybe.catMaybes
-  [ Just (prettyOperationType (operationDefinitionOperationType x))
-  , fmap prettyName (operationDefinitionName x)
-  , fmap prettyVariableDefinitions (operationDefinitionVariableDefinitions x)
-  , fmap prettyDirectives (operationDefinitionDirectives x)
-  , Just (prettySelectionSet (operationDefinitionSelectionSet x))
-  ])
-
-
-prettyName :: Name -> Doc ()
-prettyName x = P.pretty (nameValue x)
-
-
-prettyVariableDefinitions :: VariableDefinitions -> Doc ()
-prettyVariableDefinitions x =
-  P.parens (P.sep (map prettyVariableDefinition (variableDefinitionsValue x)))
-
-
-prettyVariableDefinition :: VariableDefinition -> Doc ()
-prettyVariableDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.hcat [prettyVariable (variableDefinitionVariable x), P.pretty ":"])
-  , Just (prettyType (variableDefinitionType x))
-  , fmap prettyDefaultValue (variableDefinitionDefaultValue x)
-  ])
-
-
-prettyType :: Type -> Doc ()
-prettyType x = case x of
-  TypeNamed y -> prettyNamedType y
-  TypeList y -> prettyListType y
-  TypeNonNull y -> prettyNonNullType y
-
-
-prettyNamedType :: NamedType -> Doc ()
-prettyNamedType x = prettyName (namedTypeValue x)
-
-
-prettyListType :: ListType -> Doc ()
-prettyListType x = P.brackets (prettyType (listTypeValue x))
-
-
-prettyNonNullType :: NonNullType -> Doc ()
-prettyNonNullType x = case x of
-  NonNullTypeNamed y -> P.hcat [prettyNamedType y, P.pretty "!"]
-  NonNullTypeList y -> P.hcat [prettyListType y, P.pretty "!"]
-
-
-prettyDefaultValue :: DefaultValue -> Doc ()
-prettyDefaultValue x = P.sep [P.pretty "=", prettyValue (defaultValueValue x)]
-
-
-prettyDirectives :: Directives -> Doc ()
-prettyDirectives x = P.sep (map prettyDirective (NonEmpty.toList (directivesValue x)))
-
-
-prettyDirective :: Directive -> Doc ()
-prettyDirective x = P.sep (Maybe.catMaybes
-  [ Just (P.hcat [P.pretty "@", prettyName (directiveName x)])
-  , fmap prettyArguments (directiveArguments x)
-  ])
-
-
-prettyOperationType :: OperationType -> Doc ()
-prettyOperationType operationType = case operationType of
-  OperationTypeQuery -> P.pretty "query"
-  OperationTypeMutation -> P.pretty "mutation"
-  OperationTypeSubscription -> P.pretty "subscription"
-
-
-prettySelectionSet :: SelectionSet -> Doc ()
-prettySelectionSet x = P.braces (P.sep (map prettySelection (selectionSetValue x)))
-
-
-prettySelection :: Selection -> Doc ()
-prettySelection x = case x of
-  SelectionField y -> prettyField y
-  SelectionFragmentSpread y -> prettyFragmentSpread y
-  SelectionInlineFragment y -> prettyInlineFragment y
-
-
-prettyField :: Field -> Doc ()
-prettyField x = P.sep (Maybe.catMaybes
-  [ fmap prettyAlias (fieldAlias x)
-  , Just (prettyName (fieldName x))
-  , fmap prettyArguments (fieldArguments x)
-  , fmap prettyDirectives (fieldDirectives x)
-  , fmap prettySelectionSet (fieldSelectionSet x)
-  ])
-
-
-prettyAlias :: Alias -> Doc ()
-prettyAlias x = P.hcat [prettyName (aliasValue x), P.pretty ":"]
-
-
-prettyArguments :: Arguments -> Doc ()
-prettyArguments x = P.parens (P.sep (map prettyArgument (argumentsValue x)))
-
-
-prettyArgument :: Argument -> Doc ()
-prettyArgument x = P.sep
-  [ P.hcat [prettyName (argumentName x), P.pretty ":"]
-  , prettyValue (argumentValue x)
-  ]
-
-
-prettyValue :: Value -> Doc ()
-prettyValue x = case x of
-  ValueVariable y -> prettyVariable y
-  ValueInt y -> prettyInt y
-  ValueFloat y -> prettyFloat y
-  ValueString y -> prettyString y
-  ValueBoolean y -> prettyBoolean y
-  ValueNull -> prettyNull
-  ValueEnum y -> prettyEnum y
-  ValueList y -> prettyList y
-  ValueObject y -> prettyObject y
-
-
-prettyVariable :: Variable -> Doc ()
-prettyVariable x = P.hcat [P.pretty "$", prettyName (variableValue x)]
-
-
-prettyInt :: Integer -> Doc ()
-prettyInt = P.pretty
-
-
-prettyFloat :: Scientific -> Doc ()
-prettyFloat x = P.pretty (Builder.toLazyText (Scientific.scientificBuilder x))
-
-
-prettyString :: Text -> Doc ()
-prettyString x = let
-  isAsciiPrintable c = c >= ' ' && c <= '~'
-  isBmp c = c <= '\xffff'
-  surrogatePair c = let
-    n = fromEnum c - 0x010000
-    h = 0x00d800 Bits..|. (Bits.shiftR n 10)
-    l = 0x00dc00 Bits..|. (n Bits..&. 0x0003ff)
-    in (h, l)
-  charBuilder c = case c of
-    '"' -> Builder.fromString "\\\""
-    '\\' -> Builder.fromString "\\\\"
-    _ -> if isAsciiPrintable c
-      then Builder.fromString [c]
-      else if isBmp c
-        then Builder.fromString (Printf.printf "\\u%04x" (fromEnum c))
-        else let
-          (h, l) = surrogatePair c
-          in Builder.fromString (Printf.printf "\\u%04x\\u%04x" h l)
-  in P.dquotes (P.pretty (Builder.toLazyText
-    (Text.foldl' (\b c -> mappend b (charBuilder c)) mempty x)))
-
-
-prettyBoolean :: Bool -> Doc ()
-prettyBoolean x = case x of
-  False -> P.pretty "false"
-  True -> P.pretty "true"
-
-
-prettyNull :: Doc ()
-prettyNull = P.pretty "null"
-
-
-prettyEnum :: Name -> Doc ()
-prettyEnum x = prettyName x
-
-
-prettyList :: [Value] -> Doc ()
-prettyList x = P.brackets (P.sep (map prettyValue x))
-
-
-prettyObject :: [ObjectField] -> Doc ()
-prettyObject x = P.braces (P.sep (map prettyObjectField x))
-
-
-prettyObjectField :: ObjectField -> Doc ()
-prettyObjectField x =
-  P.sep
-    [ P.hcat [prettyName (objectFieldName x), P.pretty ":"]
-    , prettyValue (objectFieldValue x)
+prettyOperationDefinition :: OperationDefinition -> Doc a
+prettyOperationDefinition OperationDefinition {..} =
+  sepMaybes
+    [ Just (prettyOperationType operationDefinitionOperationType)
+    , fmap prettyName operationDefinitionName
+    , fmap prettyVariableDefinitions operationDefinitionVariableDefinitions
+    , fmap prettyDirectives operationDefinitionDirectives
+    , Just (prettySelectionSet operationDefinitionSelectionSet)
     ]
 
+sepMaybes :: [Maybe (Doc a)] -> Doc a
+sepMaybes x = P.sep (Maybe.catMaybes x)
 
-prettyFragmentSpread :: FragmentSpread -> Doc ()
-prettyFragmentSpread x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "...")
-  , Just (prettyFragmentName (fragmentSpreadName x))
-  , fmap prettyDirectives (fragmentSpreadDirectives x)
-  ])
+prettyName :: Name -> Doc a
+prettyName Name {..} = P.pretty nameValue
 
+prettyVariableDefinitions :: VariableDefinitions -> Doc a
+prettyVariableDefinitions VariableDefinitions {..} =
+  P.parens (P.sep (map prettyVariableDefinition variableDefinitionsValue))
 
-prettyFragmentName :: FragmentName -> Doc ()
-prettyFragmentName x = prettyName (fragmentNameValue x)
+prettyVariableDefinition :: VariableDefinition -> Doc a
+prettyVariableDefinition VariableDefinition {..} =
+  sepMaybes
+    [ Just (P.hcat [prettyVariable variableDefinitionVariable, P.pretty ":"])
+    , Just (prettyType variableDefinitionType)
+    , fmap prettyDefaultValue variableDefinitionDefaultValue
+    ]
 
+prettyType :: Type -> Doc a
+prettyType x =
+  case x of
+    TypeNamed y -> prettyNamedType y
+    TypeList y -> prettyListType y
+    TypeNonNull y -> prettyNonNullType y
 
-prettyInlineFragment :: InlineFragment -> Doc ()
-prettyInlineFragment x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "...")
-  , fmap prettyTypeCondition (inlineFragmentTypeCondition x)
-  , fmap prettyDirectives (inlineFragmentDirectives x)
-  , Just (prettySelectionSet (inlineFragmentSelectionSet x))
-  ])
+prettyNamedType :: NamedType -> Doc a
+prettyNamedType NamedType {..} = prettyName namedTypeValue
 
+prettyListType :: ListType -> Doc a
+prettyListType ListType {..} = P.brackets (prettyType listTypeValue)
 
-prettyTypeCondition :: TypeCondition -> Doc ()
-prettyTypeCondition x = P.sep
-  [ P.pretty "on"
-  , prettyNamedType (typeConditionValue x)
-  ]
+prettyNonNullType :: NonNullType -> Doc a
+prettyNonNullType x =
+  case x of
+    NonNullTypeNamed y -> P.hcat [prettyNamedType y, P.pretty "!"]
+    NonNullTypeList y -> P.hcat [prettyListType y, P.pretty "!"]
 
+prettyDefaultValue :: DefaultValue -> Doc a
+prettyDefaultValue DefaultValue {..} =
+  P.sep [P.pretty "=", prettyValue defaultValueValue]
 
-prettyFragmentDefinition :: FragmentDefinition -> Doc ()
-prettyFragmentDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "fragment")
-  , Just (prettyFragmentName (fragmentName x))
-  , Just (prettyTypeCondition (fragmentTypeCondition x))
-  , fmap prettyDirectives (fragmentDirectives x)
-  , Just (prettySelectionSet (fragmentSelectionSet x))
-  ])
+prettyDirectives :: Directives -> Doc a
+prettyDirectives Directives {..} =
+  P.sep (map prettyDirective (NonEmpty.toList directivesValue))
 
+prettyDirective :: Directive -> Doc a
+prettyDirective Directive {..} =
+  sepMaybes
+    [ Just (P.hcat [P.pretty "@", prettyName directiveName])
+    , fmap prettyArguments directiveArguments
+    ]
 
-prettyTypeSystemDefinition :: TypeSystemDefinition -> Doc ()
-prettyTypeSystemDefinition x = case x of
-  TypeSystemDefinitionSchema y -> prettySchemaDefinition y
-  TypeSystemDefinitionType y -> prettyTypeDefinition y
-  TypeSystemDefinitionTypeExtension y -> prettyTypeExtensionDefinition y
-  TypeSystemDefinitionDirective y -> prettyDirectiveDefinition y
+prettyOperationType :: OperationType -> Doc a
+prettyOperationType operationType =
+  case operationType of
+    OperationTypeQuery -> P.pretty "query"
+    OperationTypeMutation -> P.pretty "mutation"
+    OperationTypeSubscription -> P.pretty "subscription"
 
+prettySelectionSet :: SelectionSet -> Doc a
+prettySelectionSet SelectionSet {..} =
+  P.braces (P.sep (map prettySelection selectionSetValue))
 
-prettySchemaDefinition :: SchemaDefinition -> Doc ()
-prettySchemaDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "schema")
-  , fmap prettyDirectives (schemaDefinitionDirectives x)
-  , Just (prettyOperationTypeDefinitions (schemaDefinitionOperationTypes x))
-  ])
+prettySelection :: Selection -> Doc a
+prettySelection x =
+  case x of
+    SelectionField y -> prettyField y
+    SelectionFragmentSpread y -> prettyFragmentSpread y
+    SelectionInlineFragment y -> prettyInlineFragment y
 
+prettyField :: Field -> Doc a
+prettyField Field {..} =
+  sepMaybes
+    [ fmap prettyAlias fieldAlias
+    , Just (prettyName fieldName)
+    , fmap prettyArguments fieldArguments
+    , fmap prettyDirectives fieldDirectives
+    , fmap prettySelectionSet fieldSelectionSet
+    ]
 
-prettyOperationTypeDefinitions :: OperationTypeDefinitions -> Doc ()
-prettyOperationTypeDefinitions x =
-  P.braces (P.sep (map prettyOperationTypeDefinition (operationTypeDefinitionsValue x)))
+prettyAlias :: Alias -> Doc a
+prettyAlias Alias {..} = P.hcat [prettyName aliasValue, P.pretty ":"]
 
+prettyArguments :: Arguments -> Doc a
+prettyArguments Arguments {..} =
+  P.parens (P.sep (map prettyArgument argumentsValue))
 
-prettyOperationTypeDefinition :: OperationTypeDefinition -> Doc ()
-prettyOperationTypeDefinition x = P.sep
-  [ P.hcat [prettyOperationType (operationTypeDefinitionOperation x), P.pretty ":"]
-  , prettyNamedType (operationTypeDefinitionType x)
-  ]
+prettyArgument :: Argument -> Doc a
+prettyArgument Argument {..} =
+  P.sep
+    [P.hcat [prettyName argumentName, P.pretty ":"], prettyValue argumentValue]
 
+prettyValue :: Value -> Doc a
+prettyValue x =
+  case x of
+    ValueVariable y -> prettyVariable y
+    ValueInt y -> prettyInt y
+    ValueFloat y -> prettyFloat y
+    ValueString y -> prettyString y
+    ValueBoolean y -> prettyBoolean y
+    ValueNull -> prettyNull
+    ValueEnum y -> prettyEnum y
+    ValueList y -> prettyList y
+    ValueObject y -> prettyObject y
 
-prettyTypeDefinition :: TypeDefinition -> Doc ()
-prettyTypeDefinition x = case x of
-  TypeDefinitionScalar y -> prettyScalarTypeDefinition y
-  TypeDefinitionObject y -> prettyObjectTypeDefinition y
-  TypeDefinitionInterface y -> prettyInterfaceTypeDefinition y
-  TypeDefinitionUnion y -> prettyUnionTypeDefinition y
-  TypeDefinitionEnum y -> prettyEnumTypeDefinition y
-  TypeDefinitionInputObject y -> prettyInputObjectTypeDefinition y
+prettyVariable :: Variable -> Doc a
+prettyVariable Variable {..} = P.hcat [P.pretty "$", prettyName variableValue]
 
+prettyInt :: Integer -> Doc a
+prettyInt = P.pretty
 
-prettyScalarTypeDefinition :: ScalarTypeDefinition -> Doc ()
-prettyScalarTypeDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "scalar")
-  , Just (prettyName (scalarTypeDefinitionName x))
-  , fmap prettyDirectives (scalarTypeDefinitionDirectives x)
-  ])
+prettyFloat :: Scientific -> Doc a
+prettyFloat x = P.pretty (Builder.toLazyText (Scientific.scientificBuilder x))
 
+prettyString :: Text -> Doc a
+prettyString x =
+  P.dquotes
+    (P.pretty
+       (Builder.toLazyText
+          (Text.foldl' (\b c -> mappend b (charBuilder c)) mempty x)))
 
-prettyObjectTypeDefinition :: ObjectTypeDefinition -> Doc ()
-prettyObjectTypeDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "type")
-  , Just (prettyName (objectTypeDefinitionName x))
-  , fmap prettyInterfaces (objectTypeDefinitionInterfaces x)
-  , fmap prettyDirectives (objectTypeDefinitionDirectives x)
-  , Just (prettyFieldDefinitions (objectTypeDefinitionFields x))
-  ])
+charBuilder :: Char -> Builder
+charBuilder c =
+  case c of
+    '"' -> Builder.fromString "\\\""
+    '\\' -> Builder.fromString "\\\\"
+    _
+      | asciiPrintable c -> Builder.fromString [c]
+      | bmp c -> Builder.fromString (Printf.printf "\\u%04x" (fromEnum c))
+      | otherwise ->
+        let (h, l) = surrogatePair c
+        in Builder.fromString (Printf.printf "\\u%04x\\u%04x" h l)
 
+asciiPrintable :: Char -> Bool
+asciiPrintable c = ' ' <= c && c <= '~'
 
-prettyInterfaces :: Interfaces -> Doc ()
-prettyInterfaces x =
-  P.sep (P.pretty "implements" : map prettyNamedType (NonEmpty.toList (interfacesValue x)))
+bmp :: Char -> Bool
+bmp c = c <= '\xffff'
 
+surrogatePair :: Char -> (Int, Int)
+surrogatePair c =
+  let n = fromEnum c - 0x010000
+      h = 0x00d800 Bits..|. Bits.shiftR n 10
+      l = 0x00dc00 Bits..|. (n Bits..&. 0x0003ff)
+  in (h, l)
 
-prettyFieldDefinitions :: FieldDefinitions -> Doc ()
-prettyFieldDefinitions x =
-  P.braces (P.sep (map prettyFieldDefinition (fieldDefinitionsValue x)))
+prettyBoolean :: Bool -> Doc a
+prettyBoolean x =
+  if x
+    then P.pretty "true"
+    else P.pretty "false"
 
+prettyNull :: Doc a
+prettyNull = P.pretty "null"
 
-prettyFieldDefinition :: FieldDefinition -> Doc ()
-prettyFieldDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.hcat (Maybe.catMaybes
-    [ Just (prettyName (fieldDefinitionName x))
-    , fmap prettyInputValueDefinitions (fieldDefinitionArguments x)
-    , Just (P.pretty ":")
-    ]))
-  , Just (prettyType (fieldDefinitionType x))
-  , fmap prettyDirectives (fieldDefinitionDirectives x)
-  ])
+prettyEnum :: Name -> Doc a
+prettyEnum = prettyName
 
+prettyList :: [Value] -> Doc a
+prettyList x = P.brackets (P.sep (map prettyValue x))
 
-prettyInputValueDefinitions :: InputValueDefinitions -> Doc ()
-prettyInputValueDefinitions x =
-  P.parens (P.sep (map prettyInputValueDefinition (inputValueDefinitionsValue x)))
+prettyObject :: [ObjectField] -> Doc a
+prettyObject x = P.braces (P.sep (map prettyObjectField x))
 
+prettyObjectField :: ObjectField -> Doc a
+prettyObjectField ObjectField {..} =
+  P.sep
+    [ P.hcat [prettyName objectFieldName, P.pretty ":"]
+    , prettyValue objectFieldValue
+    ]
 
-prettyInputValueDefinition :: InputValueDefinition -> Doc ()
-prettyInputValueDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.hcat
-    [ prettyName (inputValueDefinitionName x)
-    , P.pretty ":"
-    ])
-  , Just (prettyType (inputValueDefinitionType x))
-  , fmap prettyDefaultValue (inputValueDefinitionDefaultValue x)
-  , fmap prettyDirectives (inputValueDefinitionDirectives x)
-  ])
+prettyFragmentSpread :: FragmentSpread -> Doc a
+prettyFragmentSpread FragmentSpread {..} =
+  sepMaybes
+    [ Just (P.pretty "...")
+    , Just (prettyFragmentName fragmentSpreadName)
+    , fmap prettyDirectives fragmentSpreadDirectives
+    ]
 
+prettyFragmentName :: FragmentName -> Doc a
+prettyFragmentName FragmentName {..} = prettyName fragmentNameValue
 
-prettyInterfaceTypeDefinition :: InterfaceTypeDefinition -> Doc ()
-prettyInterfaceTypeDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "interface")
-  , Just (prettyName (interfaceTypeDefinitionName x))
-  , fmap prettyDirectives (interfaceTypeDefinitionDirectives x)
-  , Just (prettyFieldDefinitions (interfaceTypeDefinitionFields x))
-  ])
+prettyInlineFragment :: InlineFragment -> Doc a
+prettyInlineFragment InlineFragment {..} =
+  sepMaybes
+    [ Just (P.pretty "...")
+    , fmap prettyTypeCondition inlineFragmentTypeCondition
+    , fmap prettyDirectives inlineFragmentDirectives
+    , Just (prettySelectionSet inlineFragmentSelectionSet)
+    ]
 
+prettyTypeCondition :: TypeCondition -> Doc a
+prettyTypeCondition TypeCondition {..} =
+  P.sep [P.pretty "on", prettyNamedType typeConditionValue]
 
-prettyUnionTypeDefinition :: UnionTypeDefinition -> Doc ()
-prettyUnionTypeDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "union")
-  , Just (prettyName (unionTypeDefinitionName x))
-  , fmap prettyDirectives (unionTypeDefinitionDirectives x)
-  , Just (P.pretty "=")
-  , Just (prettyUnionTypes (unionTypeDefinitionTypes x))
-  ])
+prettyFragmentDefinition :: FragmentDefinition -> Doc a
+prettyFragmentDefinition FragmentDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "fragment")
+    , Just (prettyFragmentName fragmentName)
+    , Just (prettyTypeCondition fragmentTypeCondition)
+    , fmap prettyDirectives fragmentDirectives
+    , Just (prettySelectionSet fragmentSelectionSet)
+    ]
 
+prettyTypeSystemDefinition :: TypeSystemDefinition -> Doc a
+prettyTypeSystemDefinition x =
+  case x of
+    TypeSystemDefinitionSchema y -> prettySchemaDefinition y
+    TypeSystemDefinitionType y -> prettyTypeDefinition y
+    TypeSystemDefinitionTypeExtension y -> prettyTypeExtensionDefinition y
+    TypeSystemDefinitionDirective y -> prettyDirectiveDefinition y
 
-prettyUnionTypes :: UnionTypes -> Doc ()
-prettyUnionTypes x = P.encloseSep mempty mempty (mconcat [P.space, P.pretty "|", P.space])
-  (map prettyNamedType (NonEmpty.toList (unionTypesValue x)))
+prettySchemaDefinition :: SchemaDefinition -> Doc a
+prettySchemaDefinition SchemaDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "schema")
+    , fmap prettyDirectives schemaDefinitionDirectives
+    , Just (prettyOperationTypeDefinitions schemaDefinitionOperationTypes)
+    ]
 
+prettyOperationTypeDefinitions :: OperationTypeDefinitions -> Doc a
+prettyOperationTypeDefinitions OperationTypeDefinitions {..} =
+  P.braces
+    (P.sep (map prettyOperationTypeDefinition operationTypeDefinitionsValue))
 
-prettyEnumTypeDefinition :: EnumTypeDefinition -> Doc ()
-prettyEnumTypeDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "enum")
-  , Just (prettyName (enumTypeDefinitionName x))
-  , fmap prettyDirectives (enumTypeDefinitionDirectives x)
-  , Just (prettyEnumValues (enumTypeDefinitionValues x))
-  ])
+prettyOperationTypeDefinition :: OperationTypeDefinition -> Doc a
+prettyOperationTypeDefinition OperationTypeDefinition {..} =
+  P.sep
+    [ P.hcat
+        [prettyOperationType operationTypeDefinitionOperation, P.pretty ":"]
+    , prettyNamedType operationTypeDefinitionType
+    ]
 
+prettyTypeDefinition :: TypeDefinition -> Doc a
+prettyTypeDefinition x =
+  case x of
+    TypeDefinitionScalar y -> prettyScalarTypeDefinition y
+    TypeDefinitionObject y -> prettyObjectTypeDefinition y
+    TypeDefinitionInterface y -> prettyInterfaceTypeDefinition y
+    TypeDefinitionUnion y -> prettyUnionTypeDefinition y
+    TypeDefinitionEnum y -> prettyEnumTypeDefinition y
+    TypeDefinitionInputObject y -> prettyInputObjectTypeDefinition y
 
-prettyEnumValues :: EnumValues -> Doc ()
-prettyEnumValues x =
-  P.braces (P.sep (map prettyEnumValueDefinition (enumValuesValue x)))
+prettyScalarTypeDefinition :: ScalarTypeDefinition -> Doc a
+prettyScalarTypeDefinition ScalarTypeDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "scalar")
+    , Just (prettyName scalarTypeDefinitionName)
+    , fmap prettyDirectives scalarTypeDefinitionDirectives
+    ]
 
+prettyObjectTypeDefinition :: ObjectTypeDefinition -> Doc a
+prettyObjectTypeDefinition ObjectTypeDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "type")
+    , Just (prettyName objectTypeDefinitionName)
+    , fmap prettyInterfaces objectTypeDefinitionInterfaces
+    , fmap prettyDirectives objectTypeDefinitionDirectives
+    , Just (prettyFieldDefinitions objectTypeDefinitionFields)
+    ]
 
-prettyEnumValueDefinition :: EnumValueDefinition -> Doc ()
-prettyEnumValueDefinition x = P.sep (Maybe.catMaybes
-  [ Just (prettyName (enumValueDefinitionName x))
-  , fmap prettyDirectives (enumValueDefinitionDirectives x)
-  ])
+prettyInterfaces :: Interfaces -> Doc a
+prettyInterfaces Interfaces {..} =
+  P.sep
+    (P.pretty "implements" :
+     map prettyNamedType (NonEmpty.toList interfacesValue))
 
+prettyFieldDefinitions :: FieldDefinitions -> Doc a
+prettyFieldDefinitions FieldDefinitions {..} =
+  P.braces (P.sep (map prettyFieldDefinition fieldDefinitionsValue))
 
-prettyInputObjectTypeDefinition :: InputObjectTypeDefinition -> Doc ()
-prettyInputObjectTypeDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "input")
-  , Just (prettyName (inputObjectTypeDefinitionName x))
-  , fmap prettyDirectives (inputObjectTypeDefinitionDirectives x)
-  , Just (prettyInputFieldDefinitions (inputObjectTypeDefinitionFields x))
-  ])
+prettyFieldDefinition :: FieldDefinition -> Doc a
+prettyFieldDefinition FieldDefinition {..} =
+  sepMaybes
+    [ Just
+        (P.hcat
+           (Maybe.catMaybes
+              [ Just (prettyName fieldDefinitionName)
+              , fmap prettyInputValueDefinitions fieldDefinitionArguments
+              , Just (P.pretty ":")
+              ]))
+    , Just (prettyType fieldDefinitionType)
+    , fmap prettyDirectives fieldDefinitionDirectives
+    ]
 
+prettyInputValueDefinitions :: InputValueDefinitions -> Doc a
+prettyInputValueDefinitions InputValueDefinitions {..} =
+  P.parens (P.sep (map prettyInputValueDefinition inputValueDefinitionsValue))
 
-prettyInputFieldDefinitions :: InputFieldDefinitions -> Doc ()
-prettyInputFieldDefinitions x =
-  P.braces (P.sep (map prettyInputValueDefinition (inputFieldDefinitionsValue x)))
+prettyInputValueDefinition :: InputValueDefinition -> Doc a
+prettyInputValueDefinition InputValueDefinition {..} =
+  sepMaybes
+    [ Just (P.hcat [prettyName inputValueDefinitionName, P.pretty ":"])
+    , Just (prettyType inputValueDefinitionType)
+    , fmap prettyDefaultValue inputValueDefinitionDefaultValue
+    , fmap prettyDirectives inputValueDefinitionDirectives
+    ]
 
+prettyInterfaceTypeDefinition :: InterfaceTypeDefinition -> Doc a
+prettyInterfaceTypeDefinition InterfaceTypeDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "interface")
+    , Just (prettyName interfaceTypeDefinitionName)
+    , fmap prettyDirectives interfaceTypeDefinitionDirectives
+    , Just (prettyFieldDefinitions interfaceTypeDefinitionFields)
+    ]
 
-prettyTypeExtensionDefinition :: TypeExtensionDefinition -> Doc ()
-prettyTypeExtensionDefinition x = P.sep
-  [ P.pretty "extend"
-  , prettyObjectTypeDefinition (typeExtensionDefinitionValue x)
-  ]
+prettyUnionTypeDefinition :: UnionTypeDefinition -> Doc a
+prettyUnionTypeDefinition UnionTypeDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "union")
+    , Just (prettyName unionTypeDefinitionName)
+    , fmap prettyDirectives unionTypeDefinitionDirectives
+    , Just (P.pretty "=")
+    , Just (prettyUnionTypes unionTypeDefinitionTypes)
+    ]
 
+prettyUnionTypes :: UnionTypes -> Doc a
+prettyUnionTypes UnionTypes {..} =
+  P.encloseSep
+    mempty
+    mempty
+    (mconcat [P.space, P.pretty "|", P.space])
+    (map prettyNamedType (NonEmpty.toList unionTypesValue))
 
-prettyDirectiveDefinition :: DirectiveDefinition -> Doc ()
-prettyDirectiveDefinition x = P.sep (Maybe.catMaybes
-  [ Just (P.pretty "directive")
-  , Just (P.hcat [P.pretty "@", prettyName (directiveDefinitionName x)])
-  , fmap prettyInputValueDefinitions (directiveDefinitionArguments x)
-  , Just (P.pretty "on")
-  , Just (prettyDirectiveLocations (directiveDefinitionLocations x))
-  ])
+prettyEnumTypeDefinition :: EnumTypeDefinition -> Doc a
+prettyEnumTypeDefinition EnumTypeDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "enum")
+    , Just (prettyName enumTypeDefinitionName)
+    , fmap prettyDirectives enumTypeDefinitionDirectives
+    , Just (prettyEnumValues enumTypeDefinitionValues)
+    ]
 
+prettyEnumValues :: EnumValues -> Doc a
+prettyEnumValues EnumValues {..} =
+  P.braces (P.sep (map prettyEnumValueDefinition enumValuesValue))
 
-prettyDirectiveLocations :: DirectiveLocations -> Doc ()
-prettyDirectiveLocations x = P.encloseSep mempty mempty (mconcat [P.space, P.pretty "|", P.space])
-  (map prettyName (NonEmpty.toList (directiveLocationsValue x)))
+prettyEnumValueDefinition :: EnumValueDefinition -> Doc a
+prettyEnumValueDefinition EnumValueDefinition {..} =
+  sepMaybes
+    [ Just (prettyName enumValueDefinitionName)
+    , fmap prettyDirectives enumValueDefinitionDirectives
+    ]
+
+prettyInputObjectTypeDefinition :: InputObjectTypeDefinition -> Doc a
+prettyInputObjectTypeDefinition InputObjectTypeDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "input")
+    , Just (prettyName inputObjectTypeDefinitionName)
+    , fmap prettyDirectives inputObjectTypeDefinitionDirectives
+    , Just (prettyInputFieldDefinitions inputObjectTypeDefinitionFields)
+    ]
+
+prettyInputFieldDefinitions :: InputFieldDefinitions -> Doc a
+prettyInputFieldDefinitions InputFieldDefinitions {..} =
+  P.braces (P.sep (map prettyInputValueDefinition inputFieldDefinitionsValue))
+
+prettyTypeExtensionDefinition :: TypeExtensionDefinition -> Doc a
+prettyTypeExtensionDefinition TypeExtensionDefinition {..} =
+  P.sep
+    [P.pretty "extend", prettyObjectTypeDefinition typeExtensionDefinitionValue]
+
+prettyDirectiveDefinition :: DirectiveDefinition -> Doc a
+prettyDirectiveDefinition DirectiveDefinition {..} =
+  sepMaybes
+    [ Just (P.pretty "directive")
+    , Just (P.hcat [P.pretty "@", prettyName directiveDefinitionName])
+    , fmap prettyInputValueDefinitions directiveDefinitionArguments
+    , Just (P.pretty "on")
+    , Just (prettyDirectiveLocations directiveDefinitionLocations)
+    ]
+
+prettyDirectiveLocations :: DirectiveLocations -> Doc a
+prettyDirectiveLocations DirectiveLocations {..} =
+  P.encloseSep
+    mempty
+    mempty
+    (mconcat [P.space, P.pretty "|", P.space])
+    (map prettyName (NonEmpty.toList directiveLocationsValue))

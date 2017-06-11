@@ -10,13 +10,16 @@ import qualified Data.Text as Text
 import qualified Text.Heredoc as Heredoc
 
 main :: IO ()
-main = C.defaultMain
-  [ C.bench "parseDocument" (C.nf parseDocument text)
-  , C.bench "prettyPrintDocument" (C.nf prettyPrintDocument document)
-  ]
+main =
+  C.defaultMain
+    [ C.bench "parseDocument" (C.nf parseDocument text)
+    , C.bench "prettyPrintDocument" (C.nf prettyPrintDocument document)
+    ]
 
 text :: Text
-text = Text.pack [Heredoc.here|
+text =
+  Text.pack
+    [Heredoc.here|
 # https://github.com/graphql/graphql-js/blob/c4f26569acdb9a7dfbceb48b9786b46d65a4b11b/src/language/__tests__/kitchen-sink.graphql
 # Copyright (c) 2015, Facebook, Inc.
 # All rights reserved.

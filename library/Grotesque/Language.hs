@@ -9,12 +9,10 @@ import Data.Scientific (Scientific)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
-
 -- | <https://facebook.github.io/graphql/#Document>
 newtype Document = Document
   { documentValue :: [Definition]
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Definition>
 data Definition
@@ -22,7 +20,6 @@ data Definition
   | DefinitionFragment FragmentDefinition
   | DefinitionTypeSystem TypeSystemDefinition
   deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#OperationDefinition>
 data OperationDefinition = OperationDefinition
@@ -33,7 +30,6 @@ data OperationDefinition = OperationDefinition
   , operationDefinitionSelectionSet :: SelectionSet
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#OperationType>
 data OperationType
   = OperationTypeQuery
@@ -41,18 +37,15 @@ data OperationType
   | OperationTypeSubscription
   deriving (Bounded, Enum, Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#Name>
 newtype Name = Name
   { nameValue :: Text
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#VariableDefinitions>
 newtype VariableDefinitions = VariableDefinitions
   { variableDefinitionsValue :: [VariableDefinition]
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#VariableDefinition>
 data VariableDefinition = VariableDefinition
@@ -61,12 +54,10 @@ data VariableDefinition = VariableDefinition
   , variableDefinitionDefaultValue :: Maybe DefaultValue
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#Variable>
 newtype Variable = Variable
   { variableValue :: Name
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Type>
 data Type
@@ -75,18 +66,15 @@ data Type
   | TypeNonNull NonNullType
   deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#NamedType>
 newtype NamedType = NamedType
   { namedTypeValue :: Name
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#ListType>
 newtype ListType = ListType
   { listTypeValue :: Type
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#NonNullType>
 data NonNullType
@@ -94,12 +82,10 @@ data NonNullType
   | NonNullTypeList ListType
   deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#DefaultValue>
 newtype DefaultValue = DefaultValue
   { defaultValueValue :: Value
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Value>
 data Value
@@ -114,19 +100,16 @@ data Value
   | ValueObject [ObjectField]
   deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#ObjectField>
 data ObjectField = ObjectField
   { objectFieldName :: Name
   , objectFieldValue :: Value
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#Directives>
 newtype Directives = Directives
   { directivesValue :: NonEmpty Directive
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Directive>
 data Directive = Directive
@@ -134,12 +117,10 @@ data Directive = Directive
   , directiveArguments :: Maybe Arguments
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#Arguments>
 newtype Arguments = Arguments
   { argumentsValue :: [Argument]
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Argument>
 data Argument = Argument
@@ -147,12 +128,10 @@ data Argument = Argument
   , argumentValue :: Value
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#SelectionSet>
 newtype SelectionSet = SelectionSet
   { selectionSetValue :: [Selection]
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Selection>
 data Selection
@@ -160,7 +139,6 @@ data Selection
   | SelectionFragmentSpread FragmentSpread
   | SelectionInlineFragment InlineFragment
   deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#Field>
 data Field = Field
@@ -171,12 +149,10 @@ data Field = Field
   , fieldSelectionSet :: Maybe SelectionSet
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#Alias>
 newtype Alias = Alias
   { aliasValue :: Name
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#FragmentSpread>
 data FragmentSpread = FragmentSpread
@@ -184,12 +160,10 @@ data FragmentSpread = FragmentSpread
   , fragmentSpreadDirectives :: Maybe Directives
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#FragmentName>
 newtype FragmentName = FragmentName
   { fragmentNameValue :: Name
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#InlineFragment>
 data InlineFragment = InlineFragment
@@ -198,12 +172,10 @@ data InlineFragment = InlineFragment
   , inlineFragmentSelectionSet :: SelectionSet
   } deriving (Eq, Generic, NFData, Show)
 
-
 -- | <https://facebook.github.io/graphql/#TypeCondition>
 newtype TypeCondition = TypeCondition
   { typeConditionValue :: NamedType
   } deriving (Eq, Generic, NFData, Show)
-
 
 -- | <https://facebook.github.io/graphql/#FragmentDefinition>
 data FragmentDefinition = FragmentDefinition
@@ -213,7 +185,6 @@ data FragmentDefinition = FragmentDefinition
   , fragmentSelectionSet :: SelectionSet
   } deriving (Eq, Generic, NFData, Show)
 
-
 data TypeSystemDefinition
   = TypeSystemDefinitionSchema SchemaDefinition
   | TypeSystemDefinitionType TypeDefinition
@@ -221,23 +192,19 @@ data TypeSystemDefinition
   | TypeSystemDefinitionDirective DirectiveDefinition
   deriving (Eq, Generic, NFData, Show)
 
-
 data SchemaDefinition = SchemaDefinition
   { schemaDefinitionDirectives :: Maybe Directives
   , schemaDefinitionOperationTypes :: OperationTypeDefinitions
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype OperationTypeDefinitions = OperationTypeDefinitions
   { operationTypeDefinitionsValue :: [OperationTypeDefinition]
   } deriving (Eq, Generic, NFData, Show)
-
 
 data OperationTypeDefinition = OperationTypeDefinition
   { operationTypeDefinitionOperation :: OperationType
   , operationTypeDefinitionType :: NamedType
   } deriving (Eq, Generic, NFData, Show)
-
 
 data TypeDefinition
   = TypeDefinitionScalar ScalarTypeDefinition
@@ -248,12 +215,10 @@ data TypeDefinition
   | TypeDefinitionInputObject InputObjectTypeDefinition
   deriving (Eq, Generic, NFData, Show)
 
-
 data ScalarTypeDefinition = ScalarTypeDefinition
   { scalarTypeDefinitionName :: Name
   , scalarTypeDefinitionDirectives :: Maybe Directives
   } deriving (Eq, Generic, NFData, Show)
-
 
 data ObjectTypeDefinition = ObjectTypeDefinition
   { objectTypeDefinitionName :: Name
@@ -262,16 +227,13 @@ data ObjectTypeDefinition = ObjectTypeDefinition
   , objectTypeDefinitionFields :: FieldDefinitions
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype Interfaces = Interfaces
   { interfacesValue :: NonEmpty NamedType
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype FieldDefinitions = FieldDefinitions
   { fieldDefinitionsValue :: [FieldDefinition]
   } deriving (Eq, Generic, NFData, Show)
-
 
 data FieldDefinition = FieldDefinition
   { fieldDefinitionName :: Name
@@ -280,11 +242,9 @@ data FieldDefinition = FieldDefinition
   , fieldDefinitionDirectives :: Maybe Directives
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype InputValueDefinitions = InputValueDefinitions
   { inputValueDefinitionsValue :: [InputValueDefinition]
   } deriving (Eq, Generic, NFData, Show)
-
 
 data InputValueDefinition = InputValueDefinition
   { inputValueDefinitionName :: Name
@@ -293,13 +253,11 @@ data InputValueDefinition = InputValueDefinition
   , inputValueDefinitionDirectives :: Maybe Directives
   } deriving (Eq, Generic, NFData, Show)
 
-
 data InterfaceTypeDefinition = InterfaceTypeDefinition
   { interfaceTypeDefinitionName :: Name
   , interfaceTypeDefinitionDirectives :: Maybe Directives
   , interfaceTypeDefinitionFields :: FieldDefinitions
   } deriving (Eq, Generic, NFData, Show)
-
 
 data UnionTypeDefinition = UnionTypeDefinition
   { unionTypeDefinitionName :: Name
@@ -307,11 +265,9 @@ data UnionTypeDefinition = UnionTypeDefinition
   , unionTypeDefinitionTypes :: UnionTypes
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype UnionTypes = UnionTypes
   { unionTypesValue :: NonEmpty NamedType
   } deriving (Eq, Generic, NFData, Show)
-
 
 data EnumTypeDefinition = EnumTypeDefinition
   { enumTypeDefinitionName :: Name
@@ -319,17 +275,14 @@ data EnumTypeDefinition = EnumTypeDefinition
   , enumTypeDefinitionValues :: EnumValues
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype EnumValues = EnumValues
   { enumValuesValue :: [EnumValueDefinition]
   } deriving (Eq, Generic, NFData, Show)
-
 
 data EnumValueDefinition = EnumValueDefinition
   { enumValueDefinitionName :: Name
   , enumValueDefinitionDirectives :: Maybe Directives
   } deriving (Eq, Generic, NFData, Show)
-
 
 data InputObjectTypeDefinition = InputObjectTypeDefinition
   { inputObjectTypeDefinitionName :: Name
@@ -337,23 +290,19 @@ data InputObjectTypeDefinition = InputObjectTypeDefinition
   , inputObjectTypeDefinitionFields :: InputFieldDefinitions
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype InputFieldDefinitions = InputFieldDefinitions
   { inputFieldDefinitionsValue :: [InputValueDefinition]
   } deriving (Eq, Generic, NFData, Show)
 
-
 newtype TypeExtensionDefinition = TypeExtensionDefinition
   { typeExtensionDefinitionValue :: ObjectTypeDefinition
   } deriving (Eq, Generic, NFData, Show)
-
 
 data DirectiveDefinition = DirectiveDefinition
   { directiveDefinitionName :: Name
   , directiveDefinitionArguments :: Maybe InputValueDefinitions
   , directiveDefinitionLocations :: DirectiveLocations
   } deriving (Eq, Generic, NFData, Show)
-
 
 newtype DirectiveLocations = DirectiveLocations
   { directiveLocationsValue :: NonEmpty Name
