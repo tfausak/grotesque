@@ -8,6 +8,7 @@ import Grotesque.Language
 import Data.List.NonEmpty (NonEmpty)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
+import Text.Megaparsec (Dec, ParseError)
 import Text.Megaparsec.Text (Parser)
 
 import qualified Data.Bits as Bits
@@ -16,6 +17,9 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as M
 import qualified Text.Megaparsec.Lexer as Lexer
 import qualified Text.Read as Read
+
+parseDocument :: Text -> Either (ParseError Char Dec) Document
+parseDocument = M.parse getDocument ""
 
 getDocument :: Parser Document
 getDocument = do

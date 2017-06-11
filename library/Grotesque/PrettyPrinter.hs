@@ -16,7 +16,12 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy.Builder as Builder
 import qualified Data.Text.Lazy.Builder.Scientific as Scientific
 import qualified Data.Text.Prettyprint.Doc as P
+import qualified Data.Text.Prettyprint.Doc.Render.Text as P
 import qualified Text.Printf as Printf
+
+prettyPrintDocument :: Document -> Text
+prettyPrintDocument x =
+  P.renderStrict (P.layoutPretty (P.LayoutOptions P.Unbounded) (prettyDocument x))
 
 prettyDocument :: Document -> Doc a
 prettyDocument Document {..} = P.vsep (map prettyDefinition documentValue)

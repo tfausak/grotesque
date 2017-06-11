@@ -5,14 +5,11 @@
 
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text
-import Data.Text.Prettyprint.Doc
-import Data.Text.Prettyprint.Doc.Render.Text
 import Grotesque
 import Hedgehog
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import Text.Heredoc
-import Text.Megaparsec
 import Grotesque.Generator
 
 
@@ -690,14 +687,6 @@ itPrettyPrints :: HasCallStack => String -> Document -> Text -> Spec
 itPrettyPrints description document output =
   it ("pretty prints " ++ description)
     (shouldBe (prettyPrintDocument document) output)
-
-
-parseDocument :: Text -> Either (ParseError Char Dec) Document
-parseDocument = parse getDocument ""
-
-
-prettyPrintDocument :: Document -> Text
-prettyPrintDocument = renderStrict . layoutPretty (LayoutOptions Unbounded) . prettyDocument
 
 
 prop_round_trip :: Property
