@@ -225,13 +225,16 @@ getVariable = Variable
   <$> (getSymbol "$" *> getName)
 
 
--- TODO
 getInt :: Parser Integer
-getInt = getLexeme (do
-  integerPart <- getIntegerPart
-  case Read.readMaybe integerPart of
-    Nothing -> fail "getInt: impossible"
-    Just int -> pure int)
+getInt = getLexeme $ getAndRead getIntegerPart
+
+
+getAndRead :: Read a => Parser String -> Parser a
+getAndRead parser = do
+  string <- parser
+  case Read.readMaybe string of
+    Nothing -> fail "getAndRead: no parse"
+    Just value -> pure value
 
 
 getIntegerPart :: Parser String
@@ -241,29 +244,25 @@ getIntegerPart = M.choice
   ]
 
 
--- TODO
 getZero :: Parser String
-getZero = do
-  maybeNegativeSign <- M.optional getNegativeSign
-  zero <- M.char '0'
-  case maybeNegativeSign of
-    Nothing -> pure ([zero])
-    Just negativeSign -> pure (negativeSign : [zero])
+getZero = (:)
+  <$> getOptionalNegativeSign
+  <*> M.string "0"
 
 
-getNegativeSign :: Parser Char
-getNegativeSign = M.char '-'
+getOptionalNegativeSign :: Parser Char
+getOptionalNegativeSign = M.choice
+  [ M.char '-'
+  , pure ' '
+  ]
 
 
--- TODO
 getNonZero :: Parser String
-getNonZero = do
-  maybeNegativeSign <- M.optional getNegativeSign
-  first <- getNonZeroDigit
-  rest <- M.many M.digitChar
-  case maybeNegativeSign of
-    Nothing -> pure (first : rest)
-    Just negativeSign -> pure (negativeSign : first : rest)
+getNonZero = (:)
+  <$> getOptionalNegativeSign
+  <*> ((:)
+    <$> getNonZeroDigit
+    <*> M.many M.digitChar)
 
 
 getNonZeroDigit :: Parser Char
@@ -278,14 +277,10 @@ getFloat = getLexeme $ M.choice
   ]
 
 
--- TODO
 getFractionalFloat :: Parser Scientific
-getFractionalFloat = do
-  integerPart <- getIntegerPart
-  fractionalPart <- getFractionalPart
-  case Read.readMaybe (integerPart ++ fractionalPart) of
-    Nothing -> fail "impossible"
-    Just float -> pure float
+getFractionalFloat = getAndRead $ (++)
+  <$> getIntegerPart
+  <*> getFractionalPart
 
 
 getFractionalPart :: Parser String
@@ -298,44 +293,37 @@ getDecimalPoint :: Parser Char
 getDecimalPoint = M.char '.'
 
 
--- TODO
 getExponentFloat :: Parser Scientific
-getExponentFloat = do
-  integerPart <- getIntegerPart
-  exponentPart <- getExponentPart
-  case Read.readMaybe (integerPart ++ exponentPart) of
-    Nothing -> fail "impossible"
-    Just float -> pure float
+getExponentFloat = getAndRead $ (++)
+  <$> getIntegerPart
+  <*> getExponentPart
 
 
--- TODO
 getExponentPart :: Parser String
-getExponentPart = do
-  exponentIndicator <- getExponentIndicator
-  maybeSign <- M.optional getSign
-  digits <- M.some M.digitChar
-  case maybeSign of
-    Nothing -> pure (exponentIndicator : digits)
-    Just sign -> pure (exponentIndicator : sign : digits)
+getExponentPart = (:)
+  <$> getExponentIndicator
+  <*> ((:)
+    <$> getOptionalSign
+    <*> M.some M.digitChar)
 
 
 getExponentIndicator :: Parser Char
 getExponentIndicator = M.char' 'e'
 
 
-getSign :: Parser Char
-getSign = M.oneOf ['+', '-']
+getOptionalSign :: Parser Char
+getOptionalSign = M.choice
+  [ M.oneOf ['+', '-']
+  , pure '+'
+  ]
 
 
--- TODO
 getFractionalExponentFloat :: Parser Scientific
-getFractionalExponentFloat = do
-  integerPart <- getIntegerPart
-  fractionalPart <- getFractionalPart
-  exponentPart <- getExponentPart
-  case Read.readMaybe (integerPart ++ fractionalPart ++ exponentPart) of
-    Nothing -> fail "impossible"
-    Just float -> pure float
+getFractionalExponentFloat = getAndRead $ (++)
+  <$> getIntegerPart
+  <*> ((++)
+    <$> getFractionalPart
+    <*> getExponentPart)
 
 
 getString :: Parser Text
