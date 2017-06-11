@@ -10,6 +10,7 @@ synopsis: An implementation of GraphQL.
 
 dependencies:
   - base
+  - deepseq
   - megaparsec
   - prettyprinter
   - scientific
@@ -33,3 +34,16 @@ tests:
       - -with-rtsopts=-N
     main: test.hs
     source-dirs: tests
+
+benchmarks:
+  bench:
+    dependencies:
+      - criterion
+      - grotesque
+      - heredoc
+    ghc-options:
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
+    main: bench.hs
+    source-dirs: benchmarks
