@@ -1,0 +1,19 @@
+addons:
+  apt:
+    packages:
+      - libgmp-dev
+
+cache:
+  directories:
+    - $HOME/.local/bin
+    - $HOME/.stack
+
+before_install:
+  - sh external/install-stack.sh
+  - stack --version
+
+script:
+  - stack setup
+  - stack build --bench --only-dependencies --test
+  - stack build --bench --no-run-benchmarks --pedantic --test
+  - stack sdist --pvp-bounds both
