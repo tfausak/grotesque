@@ -1,5 +1,7 @@
 # Grotesque
 
+[![Build badge][]][build]
+
 > A style of ornamentation characterized by fanciful combinations of
 > intertwined forms.
 
@@ -37,6 +39,8 @@ If you're looking for a more mature or featureful Haskell implementation, check
 out [jdnavarro/graphql-haskell][], [dropbox/datagraph][], or
 [jml/graphql-api][].
 
+[Build badge]: https://travis-ci.org/tfausak/grotesque.svg?branch=master
+[build]: https://travis-ci.org/tfausak/grotesque
 [GraphQL]: http://graphql.org
 [the reference implementation]: https://github.com/graphql/graphql-js
 [the C++ query parser]: https://github.com/graphql/libgraphqlparser
