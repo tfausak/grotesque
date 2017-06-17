@@ -3,6 +3,9 @@ version: 0.0.0
 
 category: Web
 description: Grotesque is an implementation of GraphQL in Haskell.
+extra-source-files:
+  - CHANGELOG.markdown
+  - README.markdown
 license-file: LICENSE.markdown
 license: MIT
 maintainer: Taylor Fausak
