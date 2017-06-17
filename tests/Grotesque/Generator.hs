@@ -113,10 +113,11 @@ genValue =
 genInt :: Monad m => Gen m Integer
 genInt = H.integral (H.linearFrom 0 (-1000000000) 1000000000)
 
--- TODO
 genFloat :: Monad m => Gen m Scientific
-genFloat =
-  Scientific.fromFloatDigits <$> H.double (H.linearFracFrom 0 (-1e9) 1e9)
+genFloat = do
+  c <- genInt
+  e <- H.integral (H.linearFrom 0 (-9) 9)
+  pure (Scientific.scientific c e)
 
 genString :: Monad m => Gen m Text
 genString = H.text (H.linear 0 8) H.unicode
