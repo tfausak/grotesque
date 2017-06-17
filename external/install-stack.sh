@@ -3,10 +3,10 @@ set -o errexit -o xtrace
 
 if test ! -f "$HOME/.local/bin/stack"
 then
-  curl \
-    --location 'https://github.com/commercialhaskell/stack/releases/download/v1.4.0/stack-1.4.0-linux-x86_64.tar.gz' \
-    --output stack.tar.gz
-  tar -x -f stack.tar.gz --strip-components 1
-  mkdir -p "$HOME/.local/bin"
-  mv stack "$HOME/.local/bin/"
+  pushd "$(mktemp --directory)"
+  curl --location 'https://www.stackage.org/stack/linux-x86_64-static' --output stack.tar.gz
+  tar --extract --file stack.tar.gz --strip-components 1
+  mkdir --parents "$HOME/.local/bin"
+  mv stack "$HOME/.local/bin"
+  popd
 fi
